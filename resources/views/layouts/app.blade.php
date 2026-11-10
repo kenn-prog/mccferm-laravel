@@ -23,7 +23,7 @@
   $unread = $adm ? 0 : $u->notices()->where('is_read', false)->count();
   $nav = $adm
     ? [['/admin','Dashboard','home'],['/admin/facilities','Facilities','building'],['/admin/equipment','Equipment','box'],['/admin/requests','Requests & Borrowing','list'],['/admin/reports','Reports','chart'],['/admin/users','Users','users'],['/admin/profile','Profile & Settings','user']]
-    : [['/dashboard','Dashboard','home'],['/facilities','Facilities','building'],['/equipment','Equipment','box'],['/requests','My Requests','list'],['/transactions','My Transactions','swap'],['/notifications','Inbox','mail'],['/profile','Profile','user']];
+    : [['/dashboard','Dashboard','home'],['/facilities','Facilities','building'],['/equipment','Equipment','box'],['/requests','My Requests','list'],['/transactions','History','swap'],['/notifications','Inbox','mail'],['/profile','Profile','user']];
   $initials = collect(explode(' ', $u->name))->map(fn($p)=>mb_substr($p,0,1))->take(2)->implode('');
 @endphp
 <aside>

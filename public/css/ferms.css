@@ -27,6 +27,7 @@ main{padding:10px 32px 40px;max-width:1240px}
 .eyebrow{font-size:11px;letter-spacing:.14em;font-weight:800;color:#5d79a8;text-transform:uppercase;margin:6px 0 4px}
 h1{margin:0 0 4px;font-size:27px;letter-spacing:-.01em;color:var(--navy)}h3{margin:0 0 12px;font-size:16px;color:var(--navy)}
 .sub{color:var(--mute);margin:0 0 20px;font-size:14px}.head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:18px}.head .sub{margin:0}
+.request-dropdown{position:relative;z-index:2}.request-dropdown summary{list-style:none}.request-dropdown summary::-webkit-details-marker{display:none}.request-dropdown-menu{position:absolute;top:calc(100% + 8px);right:0;min-width:170px;padding:6px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 28px rgba(10,35,88,.16)}.request-dropdown-menu a{display:block;padding:9px 12px;border-radius:8px;color:var(--ink);font-size:13px;font-weight:600;text-decoration:none}.request-dropdown-menu a:hover{background:#f1f6ff;color:var(--blue)}
 .page-heading{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:28px}.page-heading .sub{margin-bottom:0}
 .page-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 dialog.add-form{width:min(560px,calc(100% - 32px));max-width:none;max-height:calc(100% - 32px);overflow-y:auto;margin:auto;padding:22px;background:#fff;border:1px solid var(--line);border-radius:var(--r);box-shadow:0 24px 70px rgba(10,35,88,.24);color:var(--ink)}

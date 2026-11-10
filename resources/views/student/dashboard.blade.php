@@ -7,7 +7,13 @@
 @endphp
 <div class="head">
   <div><div class="eyebrow">{{ now()->format('l, F j, Y') }}</div><h1>{{ $greet }}, {{ $first }}!</h1><p class="sub">Here's what's happening around your campus today.</p></div>
-  <a class="btn" href="/facilities">+ New request</a>
+  <details class="request-dropdown">
+    <summary class="btn">+ New request</summary>
+    <div class="request-dropdown-menu">
+      <a href="/facilities">Facilities</a>
+      <a href="/equipment">Equipment</a>
+    </div>
+  </details>
 </div>
 <div class="grid dashboard-stats">
   <div class="card stat"><div class="ic"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M10 21v-4h4v4"/></svg></div><div><span>Available Facilities</span><b>{{ $facilities }}</b></div></div>
@@ -23,10 +29,10 @@
         <div class="item"><div class="ico"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2"/></svg></div>
           <div><b>{{ $r->facility->name }}</b><small>{{ $r->starts_at->format('M d · g:i A') }} – {{ $r->ends_at->format('g:i A') }}</small></div>
           <div class="end"><span class="badge approved">Approved</span></div></div>
-      @empty <div class="empty">No upcoming reservations. <a class="link" href="/facilities">Reserve a facility</a></div> @endforelse
+      @empty <div class="empty">No upcoming reservations.</div> @endforelse
     </div>
     <div class="card">
-      <div class="cardhead"><h3>Borrowed Equipment</h3><a class="link" href="/transactions">See all →</a></div>
+      <div class="cardhead"><h3>Borrowed Equipment</h3><a class="link" href="/requests">See all →</a></div>
       @forelse($borrowed as $t)
         <div class="item"><div class="ico"><svg viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/></svg></div>
           <div><b>{{ $t->equipment->name }} ×{{ $t->quantity }}</b><small>Due {{ $t->expected_return->format('M d, Y') }}</small></div>

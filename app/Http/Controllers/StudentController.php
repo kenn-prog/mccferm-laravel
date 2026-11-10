@@ -27,7 +27,7 @@ class StudentController extends Controller {
       EquipmentItem::create(['request_id'=>$q->id,'equipment_id'=>$d['equipment_id'],'quantity'=>$d['quantity'],'borrow_date'=>$d['borrow_date'],'expected_return'=>$d['expected_return']]); });
     return redirect('/requests')->with('ok','Borrowing request submitted.');
   }
-  public function requests(Request $r) { return view('student.requests',['rows'=>$r->user()->requests()->with(['reservation.facility','item.equipment'])->latest()->get(),'facilities'=>Facility::orderBy('name')->get(),'items'=>Equipment::orderBy('name')->get()]); }
+  public function requests(Request $r) { return view('student.requests',['rows'=>$r->user()->requests()->where('status','pending')->with(['reservation.facility','item.equipment'])->latest()->get(),'facilities'=>Facility::orderBy('name')->get(),'items'=>Equipment::orderBy('name')->get()]); }
   public function updateRequest(Request $r, FermsRequest $req) {
     abort_unless($req->user_id===$r->user()->id && $req->status==='pending',404);
 
@@ -67,7 +67,11 @@ class StudentController extends Controller {
     });
     return back()->with('ok','Request cancelled.');
   }
-  public function transactions(Request $r) { return view('student.transactions',['rows'=>Transaction::with('equipment')->where('user_id',$r->user()->id)->latest()->get()]); }
+  public function transactions(Request $r) {
+    return view('student.transactions',[
+      'rows'=>$r->user()->requests()->where('status','!=','pending')->with(['reservation.facility','item.equipment'])->latest()->get(),
+    ]);
+  }
   public function notifications(Request $r) { $n=$r->user()->notices()->latest()->get(); $r->user()->notices()->update(['is_read'=>true]); return view('student.notifications',['rows'=>$n]); }
   public function profile(Request $r) { $u=$r->user(); return view('student.profile',['requestCount'=>$u->requests()->count(),'borrowedCount'=>Transaction::where('user_id',$u->id)->where('status','borrowed')->sum('quantity')]); }
   public function updateProfile(Request $r) { $d=$r->validate(['name'=>'required|string|max:255','organization_class'=>'nullable|string|max:100','phone'=>'nullable|string|max:20']); $r->user()->update($d); return back()->with('ok','Profile updated.'); }
