@@ -127,6 +127,53 @@ class FermsTest extends TestCase {
     $this->assertSame('08:00',$item->borrow_time);
     $this->assertSame('20:00',$item->expected_return_time);
   }
+  public function test_facility_and_equipment_requests_reject_sundays_on_create_and_edit(): void {
+    $student=$this->u('student');
+    $facility=Facility::create(['name'=>'Hall','location'=>'Main','capacity'=>50]);
+    $equipment=Equipment::create(['name'=>'Projector','category'=>'AV','total_quantity'=>5,'available_quantity'=>5]);
+    $sunday=today()->next('Sunday');
+    $saturday=$sunday->copy()->subDay();
+    $monday=$sunday->copy()->addDay();
+
+    $this->actingAs($student)->get('/facilities')->assertOk()
+      ->assertSee('data-school-open-date',false)
+      ->assertSee('School is closed on Sundays.');
+    $this->get('/equipment')->assertOk()
+      ->assertSee('data-school-open-date',false);
+
+    $this->post('/reservations',[
+      'facility_id'=>$facility->id,'date'=>$sunday->toDateString(),'start_time'=>'09:00','end_time'=>'10:00','purpose'=>'Sunday event',
+    ])->assertSessionHasErrors('date');
+    $this->post('/borrow',[
+      'equipment_id'=>$equipment->id,'quantity'=>1,'borrow_date'=>$sunday->toDateString(),'borrow_time'=>'09:00',
+      'expected_return'=>$monday->toDateString(),'expected_return_time'=>'10:00','purpose'=>'Sunday pickup',
+    ])->assertSessionHasErrors('borrow_date');
+    $this->post('/borrow',[
+      'equipment_id'=>$equipment->id,'quantity'=>1,'borrow_date'=>$saturday->toDateString(),'borrow_time'=>'09:00',
+      'expected_return'=>$sunday->toDateString(),'expected_return_time'=>'10:00','purpose'=>'Sunday return',
+    ])->assertSessionHasErrors('expected_return');
+    $this->assertSame(0,FermsRequest::count());
+
+    $facilityRequest=FermsRequest::create(['user_id'=>$student->id,'type'=>'facility','purpose'=>'Edit facility']);
+    Reservation::create(['request_id'=>$facilityRequest->id,'facility_id'=>$facility->id,'starts_at'=>$monday->copy()->addDay()->setTime(9,0),'ends_at'=>$monday->copy()->addDay()->setTime(10,0)]);
+    $this->post("/requests/{$facilityRequest->id}/edit",[
+      'request_id'=>$facilityRequest->id,'facility_id'=>$facility->id,'date'=>$sunday->toDateString(),
+      'start_time'=>'09:00','end_time'=>'10:00','purpose'=>'Edit facility',
+    ])->assertSessionHasErrors('date');
+
+    $equipmentRequest=FermsRequest::create(['user_id'=>$student->id,'type'=>'equipment','purpose'=>'Edit equipment']);
+    EquipmentItem::create(['request_id'=>$equipmentRequest->id,'equipment_id'=>$equipment->id,'quantity'=>1,'borrow_date'=>$monday,'borrow_time'=>'09:00','expected_return'=>$monday->copy()->addDay(),'expected_return_time'=>'10:00']);
+    $this->post("/requests/{$equipmentRequest->id}/edit",[
+      'request_id'=>$equipmentRequest->id,'equipment_id'=>$equipment->id,'quantity'=>1,
+      'borrow_date'=>$saturday->toDateString(),'borrow_time'=>'09:00',
+      'expected_return'=>$sunday->toDateString(),'expected_return_time'=>'10:00','purpose'=>'Edit equipment',
+    ])->assertSessionHasErrors('expected_return');
+    $this->post("/requests/{$equipmentRequest->id}/edit",[
+      'request_id'=>$equipmentRequest->id,'equipment_id'=>$equipment->id,'quantity'=>1,
+      'borrow_date'=>$sunday->toDateString(),'borrow_time'=>'09:00',
+      'expected_return'=>$monday->toDateString(),'expected_return_time'=>'10:00','purpose'=>'Edit equipment',
+    ])->assertSessionHasErrors('borrow_date');
+  }
   public function test_equipment_release_and_return_update_stock(): void {
     $eq=Equipment::create(['name'=>'Projector','category'=>'AV','total_quantity'=>5,'available_quantity'=>5]); $s=$this->u('student'); $a=$this->u('staff');
     $this->actingAs($s)->post('/borrow',['equipment_id'=>$eq->id,'quantity'=>2,'borrow_date'=>today()->toDateString(),'borrow_time'=>'09:00','expected_return'=>today()->addDay()->toDateString(),'expected_return_time'=>'10:00','purpose'=>'Class']);

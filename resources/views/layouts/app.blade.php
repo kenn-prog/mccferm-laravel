@@ -200,6 +200,15 @@ document.querySelectorAll('[data-return-date]').forEach(function (returnDate) {
   borrowDate.addEventListener('change', updateLimits);
   updateLimits();
 });
+document.querySelectorAll('[data-school-open-date]').forEach(function (dateInput) {
+  const validateSchoolDate = function () {
+    const isSunday = dateInput.value && new Date(dateInput.value + 'T00:00:00').getDay() === 0;
+    dateInput.setCustomValidity(isSunday ? 'The school is closed on Sundays. Please choose another date.' : '');
+  };
+  dateInput.addEventListener('input', validateSchoolDate);
+  dateInput.addEventListener('change', validateSchoolDate);
+  validateSchoolDate();
+});
 // Category chips (facilities / equipment pages).
 document.querySelectorAll('.chip').forEach(function (c) {
   c.addEventListener('click', function () {

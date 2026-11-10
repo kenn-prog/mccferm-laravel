@@ -8,13 +8,18 @@ class StudentController extends Controller {
       if($value<'08:00'||$value>'20:00') $fail('The time must be between 8:00 AM and 8:00 PM.');
     };
   }
+  private function schoolOpenDateRule(): Closure {
+    return function($attribute,$value,$fail) {
+      if(Carbon::parse($value)->isSunday()) $fail('The school is closed on Sundays. Please choose another date.');
+    };
+  }
   public function dashboard(Request $r) { $u=$r->user(); $q=$u->requests();
     return view('student.dashboard',['counts'=>['pending'=>(clone $q)->where('status','pending')->count(),'approved'=>(clone $q)->whereIn('status',['approved','released','returned'])->count(),'rejected'=>(clone $q)->where('status','rejected')->count()],
       'upcoming'=>Reservation::with('facility')->where('status','approved')->where('starts_at','>=',now())->whereHas('request',fn($x)=>$x->where('user_id',$u->id))->orderBy('starts_at')->limit(5)->get(),
       'borrowed'=>Transaction::with('equipment')->where('user_id',$u->id)->where('status','borrowed')->get(),'facilities'=>Facility::where('status','available')->count(),'equipment'=>Equipment::sum('available_quantity')]); }
   public function facilities() { return view('student.facilities',['facilities'=>Facility::orderBy('name')->get(),'booked'=>Reservation::with('facility')->where('status','approved')->where('ends_at','>=',now())->orderBy('starts_at')->get()]); }
   public function reserve(Request $r) {
-    $d=$r->validate(['facility_id'=>'required|exists:facilities,id','date'=>'required|date|after_or_equal:today','start_time'=>['required','date_format:H:i',$this->businessHoursRule()],'end_time'=>['required','date_format:H:i','after:start_time',$this->businessHoursRule()],'purpose'=>'required|string|max:255','participants'=>'nullable|integer|min:1','notes'=>'nullable|string|max:1000']);
+    $d=$r->validate(['facility_id'=>'required|exists:facilities,id','date'=>['bail','required','date','after_or_equal:today',$this->schoolOpenDateRule()],'start_time'=>['required','date_format:H:i',$this->businessHoursRule()],'end_time'=>['required','date_format:H:i','after:start_time',$this->businessHoursRule()],'purpose'=>'required|string|max:255','participants'=>'nullable|integer|min:1','notes'=>'nullable|string|max:1000']);
     $f=Facility::findOrFail($d['facility_id']); if($f->status!=='available') return back()->withErrors('That facility is not available for reservation.')->withInput();
     $s=Carbon::parse("{$d['date']} {$d['start_time']}"); $e=Carbon::parse("{$d['date']} {$d['end_time']}");
     if(Reservation::conflicting($f->id,$s,$e)->exists()) return back()->withErrors('That time slot conflicts with an approved reservation.')->withInput();
@@ -27,7 +32,7 @@ class StudentController extends Controller {
   }
   public function equipment() { return view('student.equipment',['items'=>Equipment::orderBy('category')->orderBy('name')->get()]); }
   public function borrow(Request $r) {
-    $d=$r->validate(['equipment_id'=>'required|exists:equipment,id','quantity'=>'required|integer|min:1','borrow_date'=>'required|date|after_or_equal:today','borrow_time'=>['required','date_format:H:i',$this->businessHoursRule()],'expected_return'=>'required|date|after_or_equal:borrow_date','expected_return_time'=>['required','date_format:H:i',$this->businessHoursRule()],'purpose'=>'required|string|max:255']);
+    $d=$r->validate(['equipment_id'=>'required|exists:equipment,id','quantity'=>'required|integer|min:1','borrow_date'=>['bail','required','date','after_or_equal:today',$this->schoolOpenDateRule()],'borrow_time'=>['required','date_format:H:i',$this->businessHoursRule()],'expected_return'=>['bail','required','date','after_or_equal:borrow_date',$this->schoolOpenDateRule()],'expected_return_time'=>['required','date_format:H:i',$this->businessHoursRule()],'purpose'=>'required|string|max:255']);
     if($d['expected_return']===$d['borrow_date']&&$d['expected_return_time']<=$d['borrow_time']) return back()->withErrors(['expected_return_time'=>'The return time must be later than the pickup time when returning on the same day.'])->withInput();
     $latestReturnDate=Carbon::parse($d['borrow_date'])->addDays(5);
     if(Carbon::parse($d['expected_return'])->greaterThan($latestReturnDate)) return back()->withErrors(['expected_return'=>'Expected return date must be no more than 5 days after the borrow date.'])->withInput();
@@ -44,7 +49,7 @@ class StudentController extends Controller {
     abort_unless($req->user_id===$r->user()->id && $req->status==='pending',404);
 
     if ($req->type==='facility') {
-      $d=$r->validate(['facility_id'=>'required|exists:facilities,id','date'=>'required|date|after_or_equal:today','start_time'=>['required','date_format:H:i',$this->businessHoursRule()],'end_time'=>['required','date_format:H:i','after:start_time',$this->businessHoursRule()],'purpose'=>'required|string|max:255','participants'=>'nullable|integer|min:1','notes'=>'nullable|string|max:1000']);
+      $d=$r->validate(['facility_id'=>'required|exists:facilities,id','date'=>['bail','required','date','after_or_equal:today',$this->schoolOpenDateRule()],'start_time'=>['required','date_format:H:i',$this->businessHoursRule()],'end_time'=>['required','date_format:H:i','after:start_time',$this->businessHoursRule()],'purpose'=>'required|string|max:255','participants'=>'nullable|integer|min:1','notes'=>'nullable|string|max:1000']);
       $facility=Facility::findOrFail($d['facility_id']);
       if ($facility->status!=='available' && $facility->id!==$req->reservation->facility_id) return back()->withErrors(['facility_id'=>'That facility is not available.'])->withInput();
       $startsAt=Carbon::parse("{$d['date']} {$d['start_time']}");
@@ -56,7 +61,7 @@ class StudentController extends Controller {
         $req->reservation->update(['facility_id'=>$facility->id,'starts_at'=>$startsAt,'ends_at'=>$endsAt]);
       });
     } elseif ($req->type==='equipment') {
-      $d=$r->validate(['equipment_id'=>'required|exists:equipment,id','quantity'=>'required|integer|min:1','borrow_date'=>'required|date|after_or_equal:today','borrow_time'=>['required','date_format:H:i',$this->businessHoursRule()],'expected_return'=>'required|date|after_or_equal:borrow_date','expected_return_time'=>['required','date_format:H:i',$this->businessHoursRule()],'purpose'=>'required|string|max:255']);
+      $d=$r->validate(['equipment_id'=>'required|exists:equipment,id','quantity'=>'required|integer|min:1','borrow_date'=>['bail','required','date','after_or_equal:today',$this->schoolOpenDateRule()],'borrow_time'=>['required','date_format:H:i',$this->businessHoursRule()],'expected_return'=>['bail','required','date','after_or_equal:borrow_date',$this->schoolOpenDateRule()],'expected_return_time'=>['required','date_format:H:i',$this->businessHoursRule()],'purpose'=>'required|string|max:255']);
       if($d['expected_return']===$d['borrow_date']&&$d['expected_return_time']<=$d['borrow_time']) return back()->withErrors(['expected_return_time'=>'The return time must be later than the pickup time when returning on the same day.'])->withInput();
       if (Carbon::parse($d['expected_return'])->greaterThan(Carbon::parse($d['borrow_date'])->addDays(5))) return back()->withErrors(['expected_return'=>'Expected return date must be no more than 5 days after the borrow date.'])->withInput();
       $equipment=Equipment::findOrFail($d['equipment_id']);

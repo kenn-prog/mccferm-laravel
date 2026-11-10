@@ -52,7 +52,7 @@
           </div>
           <div class="form-field">
             <label for="request-{{ $q->id }}-date">Date</label>
-            <input id="request-{{ $q->id }}-date" type="date" name="date" data-edit-field="date" data-original="{{ $q->reservation->starts_at->toDateString() }}" min="{{ today()->toDateString() }}" value="{{ old('request_id')==$q->id ? old('date', $q->reservation->starts_at->toDateString()) : $q->reservation->starts_at->toDateString() }}" required>
+            <input id="request-{{ $q->id }}-date" type="date" name="date" data-edit-field="date" data-school-open-date data-original="{{ $q->reservation->starts_at->toDateString() }}" min="{{ today()->toDateString() }}" value="{{ old('request_id')==$q->id ? old('date', $q->reservation->starts_at->toDateString()) : $q->reservation->starts_at->toDateString() }}" required>
           </div>
           <div class="form-field">
             <label for="request-{{ $q->id }}-start">Start</label>
@@ -98,7 +98,7 @@
           </div>
           <div class="form-field">
             <label for="request-{{ $q->id }}-borrow-date">Borrow date</label>
-            <input id="request-{{ $q->id }}-borrow-date" type="date" name="borrow_date" data-edit-field="borrow_date" data-original="{{ $q->item->borrow_date->toDateString() }}" data-borrow-date min="{{ today()->toDateString() }}" value="{{ old('request_id')==$q->id ? old('borrow_date', $q->item->borrow_date->toDateString()) : $q->item->borrow_date->toDateString() }}" required>
+            <input id="request-{{ $q->id }}-borrow-date" type="date" name="borrow_date" data-edit-field="borrow_date" data-school-open-date data-original="{{ $q->item->borrow_date->toDateString() }}" data-borrow-date min="{{ today()->toDateString() }}" value="{{ old('request_id')==$q->id ? old('borrow_date', $q->item->borrow_date->toDateString()) : $q->item->borrow_date->toDateString() }}" required>
           </div>
           <div class="form-field">
             <label for="request-{{ $q->id }}-borrow-time">Pickup time (8:00 AM–8:00 PM)</label>
@@ -106,7 +106,7 @@
           </div>
           <div class="form-field">
             <label for="request-{{ $q->id }}-return-date">Expected return</label>
-            <input id="request-{{ $q->id }}-return-date" type="date" name="expected_return" data-edit-field="expected_return" data-original="{{ $q->item->expected_return->toDateString() }}" data-return-date data-borrow-date-id="request-{{ $q->id }}-borrow-date" min="{{ $q->item->borrow_date->toDateString() }}" max="{{ $q->item->borrow_date->copy()->addDays(5)->toDateString() }}" value="{{ old('request_id')==$q->id ? old('expected_return', $q->item->expected_return->toDateString()) : $q->item->expected_return->toDateString() }}" required>
+            <input id="request-{{ $q->id }}-return-date" type="date" name="expected_return" data-edit-field="expected_return" data-school-open-date data-original="{{ $q->item->expected_return->toDateString() }}" data-return-date data-borrow-date-id="request-{{ $q->id }}-borrow-date" min="{{ $q->item->borrow_date->toDateString() }}" max="{{ $q->item->borrow_date->copy()->addDays(5)->toDateString() }}" value="{{ old('request_id')==$q->id ? old('expected_return', $q->item->expected_return->toDateString()) : $q->item->expected_return->toDateString() }}" required>
           </div>
           <div class="form-field">
             <label for="request-{{ $q->id }}-return-time">Return time (8:00 AM–8:00 PM)</label>
