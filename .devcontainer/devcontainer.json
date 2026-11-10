@@ -1,0 +1,8 @@
+{
+  "name": "MCC-FERMS - PHP 8.3",
+  "build": { "dockerfile": "Dockerfile" },
+  "remoteUser": "vscode",
+  "forwardPorts": [8000],
+  "portsAttributes": { "8000": { "label": "MCC-FERMS", "onAutoForward": "notify" } },
+  "postCreateCommand": "bash scripts/setup.sh"
+}

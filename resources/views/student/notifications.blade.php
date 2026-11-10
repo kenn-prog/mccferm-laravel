@@ -1,0 +1,1 @@
+@extends('layouts.app')@section('content')<h1>Notifications</h1><p class="sub">Updates about your requests.</p>@forelse($rows as $n)<div class="card"><b>{{ $n->title }}</b> <small>{{ $n->created_at->diffForHumans() }}</small><p>{{ $n->message }}</p></div>@empty<div class="card">No notifications.</div>@endforelse @endsection
