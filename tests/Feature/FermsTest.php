@@ -41,6 +41,89 @@ class FermsTest extends TestCase {
     ])->assertSessionHasErrors('expected_return');
     $this->assertSame(0,FermsRequest::count());
   }
+  public function test_equipment_borrow_quantity_is_limited_to_available_stock(): void {
+    $student=$this->u('student');
+    $equipment=Equipment::create(['name'=>'Projector','category'=>'AV','total_quantity'=>5,'available_quantity'=>3]);
+
+    $this->actingAs($student)->get('/equipment')->assertOk()
+      ->assertSee('<option value="'.$equipment->id.'" data-available="3"',false)
+      ->assertSee('>Projector</option>',false)
+      ->assertDontSee('Projector (3)',false)
+      ->assertSee('Quantity (3 available)')
+      ->assertSee('max="3"',false);
+
+    $this->post('/borrow',[
+      'equipment_id'=>$equipment->id,
+      'quantity'=>4,
+      'borrow_date'=>today()->toDateString(),
+      'expected_return'=>today()->addDay()->toDateString(),
+      'purpose'=>'Class',
+    ])->assertSessionHasErrors('quantity');
+    $this->assertSame(0,FermsRequest::count());
+  }
+  public function test_facility_request_offers_equipment_then_shows_staff_letter_reminder(): void {
+    $student=$this->u('student');
+    $facility=Facility::create(['name'=>'Hall','location'=>'Main','capacity'=>50]);
+    $equipment=Equipment::create(['name'=>'Projector','category'=>'AV','total_quantity'=>5,'available_quantity'=>5]);
+
+    $this->actingAs($student)->post('/reservations',[
+      'facility_id'=>$facility->id,
+      'date'=>today()->addDay()->toDateString(),
+      'start_time'=>'09:00',
+      'end_time'=>'10:00',
+      'purpose'=>'Class activity',
+    ])->assertRedirect('/requests')->assertSessionHas('request_followup','equipment');
+
+    $this->get('/requests')->assertOk()
+      ->assertSee('Would you also like to borrow equipment?')
+      ->assertSee('Please visit the staff office to sign the required letter for your request.')
+      ->assertSee('href="/equipment?request_followup=1"',false);
+
+    $this->get('/equipment?request_followup=1')->assertOk()
+      ->assertSee('action="/borrow?request_followup=1"',false);
+    $this->post('/borrow?request_followup=1',[
+      'equipment_id'=>$equipment->id,
+      'quantity'=>1,
+      'borrow_date'=>today()->addDay()->toDateString(),
+      'expected_return'=>today()->addDays(2)->toDateString(),
+      'purpose'=>'Class activity',
+    ])->assertRedirect('/requests')->assertSessionHas('request_reminder',true);
+
+    $this->get('/requests')->assertOk()
+      ->assertSee('Please visit the staff office to sign the required letter for your request.')
+      ->assertDontSee('<dialog class="confirm-dialog" id="request-followup-dialog">',false);
+  }
+  public function test_equipment_request_offers_facility_then_shows_staff_letter_reminder(): void {
+    $student=$this->u('student');
+    $equipment=Equipment::create(['name'=>'Projector','category'=>'AV','total_quantity'=>5,'available_quantity'=>5]);
+    $facility=Facility::create(['name'=>'Hall','location'=>'Main','capacity'=>50]);
+
+    $this->actingAs($student)->post('/borrow',[
+      'equipment_id'=>$equipment->id,
+      'quantity'=>1,
+      'borrow_date'=>today()->addDay()->toDateString(),
+      'expected_return'=>today()->addDays(2)->toDateString(),
+      'purpose'=>'Class activity',
+    ])->assertRedirect('/requests')->assertSessionHas('request_followup','facility');
+
+    $this->get('/requests')->assertOk()
+      ->assertSee('Would you also like to reserve a facility?')
+      ->assertSee('href="/facilities?request_followup=1"',false);
+
+    $this->get('/facilities?request_followup=1')->assertOk()
+      ->assertSee('action="/reservations?request_followup=1"',false);
+    $this->post('/reservations?request_followup=1',[
+      'facility_id'=>$facility->id,
+      'date'=>today()->addDays(2)->toDateString(),
+      'start_time'=>'09:00',
+      'end_time'=>'10:00',
+      'purpose'=>'Class activity',
+    ])->assertRedirect('/requests')->assertSessionHas('request_reminder',true);
+
+    $this->get('/requests')->assertOk()
+      ->assertSee('Please visit the staff office to sign the required letter for your request.')
+      ->assertDontSee('<dialog class="confirm-dialog" id="request-followup-dialog">',false);
+  }
   public function test_student_can_edit_own_pending_equipment_request(): void {
     $student=$this->u('student');
     $equipment=Equipment::create(['name'=>'Projector','category'=>'AV','total_quantity'=>5,'available_quantity'=>5]);
@@ -107,6 +190,8 @@ class FermsTest extends TestCase {
 
     $response=$this->actingAs($student)->get('/dashboard')->assertOk();
 
+    $response->assertDontSee('Search this page...')
+      ->assertDontSee("document.getElementById('q')");
     $response->assertSee('Upcoming Reservations</h3><a class="link" href="/requests">See all',false);
     $response->assertSee('Borrowed Equipment</h3><a class="link" href="/requests">See all',false);
   }

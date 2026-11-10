@@ -41,7 +41,6 @@
   </div>
 </aside>
 <div class="wrap">
-  <div class="top"><div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input id="q" type="search" placeholder="Search this page..." autocomplete="off"></div></div>
   <main>
     @if(session('ok'))<div class="alert ok">{{ session('ok') }}</div>@endif
     @if($errors->any())<div class="alert err">@foreach($errors->all() as $e){{ $e }}<br>@endforeach</div>@endif
@@ -200,14 +199,6 @@ document.querySelectorAll('[data-return-date]').forEach(function (returnDate) {
   };
   borrowDate.addEventListener('change', updateLimits);
   updateLimits();
-});
-// Page search: filters table rows and facility/equipment cards on the current page.
-document.getElementById('q').addEventListener('input', function () {
-  const t = this.value.toLowerCase();
-  document.querySelectorAll('table tr, .fcard, .ecard, .item').forEach(function (el) {
-    if (el.querySelector('th')) return;
-    el.style.display = el.textContent.toLowerCase().includes(t) ? '' : 'none';
-  });
 });
 // Category chips (facilities / equipment pages).
 document.querySelectorAll('.chip').forEach(function (c) {

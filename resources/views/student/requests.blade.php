@@ -114,6 +114,43 @@
     @endif
   </dialog>
 @endforeach
+@if(session('request_followup'))
+  <dialog class="confirm-dialog request-followup-dialog" id="request-followup-dialog">
+    <div class="add-form-header">
+      <h3>Would you also like to {{ session('request_followup')==='equipment' ? 'borrow equipment' : 'reserve a facility' }}?</h3>
+    </div>
+    <p>Requesting both can help you plan your activity.</p>
+    <div class="row confirm-actions">
+      <button class="btn l" type="button" data-finish-request>No, finish</button>
+      <a class="btn" href="{{ session('request_followup')==='equipment' ? '/equipment?request_followup=1' : '/facilities?request_followup=1' }}">Yes, continue</a>
+    </div>
+  </dialog>
+@endif
+@if(session('request_reminder') || session('request_followup'))
+  <dialog class="confirm-dialog" id="request-reminder-dialog">
+    <div class="add-form-header">
+      <h3>Request submitted</h3>
+      <button class="btn s l" type="button" data-close-request-reminder>Close</button>
+    </div>
+    <p>Please visit the staff office to sign the required letter for your request.</p>
+  </dialog>
+  <script>
+    const requestFollowupDialog = document.getElementById('request-followup-dialog');
+    const requestReminderDialog = document.getElementById('request-reminder-dialog');
+    if (requestFollowupDialog) {
+      requestFollowupDialog.showModal();
+      requestFollowupDialog.querySelector('[data-finish-request]').addEventListener('click', function () {
+        requestFollowupDialog.close();
+        requestReminderDialog.showModal();
+      });
+    } else if (requestReminderDialog) {
+      requestReminderDialog.showModal();
+    }
+    requestReminderDialog.querySelector('[data-close-request-reminder]').addEventListener('click', function () {
+      requestReminderDialog.close();
+    });
+  </script>
+@endif
 @if($errors->any() && old('request_id'))
   <script>document.getElementById('edit-request-{{ old('request_id') }}')?.showModal();</script>
 @endif

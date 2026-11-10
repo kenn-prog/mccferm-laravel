@@ -15,17 +15,23 @@ class StudentController extends Controller {
     if(Reservation::conflicting($f->id,$s,$e)->exists()) return back()->withErrors('That time slot conflicts with an approved reservation.')->withInput();
     DB::transaction(function() use($r,$d,$s,$e){ $q=FermsRequest::create(['user_id'=>$r->user()->id,'type'=>'facility','purpose'=>$d['purpose'],'participants'=>$d['participants']??null,'organization_class'=>$r->user()->organization_class,'notes'=>$d['notes']??null]);
       Reservation::create(['request_id'=>$q->id,'facility_id'=>$d['facility_id'],'starts_at'=>$s,'ends_at'=>$e]); });
-    return redirect('/requests')->with('ok','Reservation request submitted. Visit the school to have your letter signed once approved.');
+    $redirect=redirect('/requests')->with('ok','Reservation request submitted.');
+    return $r->boolean('request_followup')
+      ? $redirect->with('request_reminder',true)
+      : $redirect->with('request_followup','equipment');
   }
   public function equipment() { return view('student.equipment',['items'=>Equipment::orderBy('category')->orderBy('name')->get()]); }
   public function borrow(Request $r) {
     $d=$r->validate(['equipment_id'=>'required|exists:equipment,id','quantity'=>'required|integer|min:1','borrow_date'=>'required|date|after_or_equal:today','expected_return'=>'required|date|after_or_equal:borrow_date','purpose'=>'required|string|max:255']);
     $latestReturnDate=Carbon::parse($d['borrow_date'])->addDays(5);
     if(Carbon::parse($d['expected_return'])->greaterThan($latestReturnDate)) return back()->withErrors(['expected_return'=>'Expected return date must be no more than 5 days after the borrow date.'])->withInput();
-    $eq=Equipment::findOrFail($d['equipment_id']); if($eq->status!=='available'||$d['quantity']>$eq->available_quantity) return back()->withErrors('Requested quantity is not available.')->withInput();
+    $eq=Equipment::findOrFail($d['equipment_id']); if($eq->status!=='available'||$d['quantity']>$eq->available_quantity) return back()->withErrors(['quantity'=>'Requested quantity is not available.'])->withInput();
     DB::transaction(function() use($r,$d){ $q=FermsRequest::create(['user_id'=>$r->user()->id,'type'=>'equipment','purpose'=>$d['purpose']]);
       EquipmentItem::create(['request_id'=>$q->id,'equipment_id'=>$d['equipment_id'],'quantity'=>$d['quantity'],'borrow_date'=>$d['borrow_date'],'expected_return'=>$d['expected_return']]); });
-    return redirect('/requests')->with('ok','Borrowing request submitted.');
+    $redirect=redirect('/requests')->with('ok','Borrowing request submitted.');
+    return $r->boolean('request_followup')
+      ? $redirect->with('request_reminder',true)
+      : $redirect->with('request_followup','facility');
   }
   public function requests(Request $r) { return view('student.requests',['rows'=>$r->user()->requests()->where('status','pending')->with(['reservation.facility','item.equipment'])->latest()->get(),'facilities'=>Facility::orderBy('name')->get(),'items'=>Equipment::orderBy('name')->get()]); }
   public function updateRequest(Request $r, FermsRequest $req) {

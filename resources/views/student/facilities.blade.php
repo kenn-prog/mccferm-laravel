@@ -21,7 +21,7 @@
 </div>
 <dialog class="card add-form" id="reservation-dialog">
   <div class="add-form-header"><h3>Request a reservation</h3><button class="btn s l" type="button" data-close-dialog>Cancel</button></div>
-  <form method="post" action="/reservations">@csrf
+  <form method="post" action="{{ request()->boolean('request_followup') ? '/reservations?request_followup=1' : '/reservations' }}">@csrf
       <div class="row">
         <div><label>Facility</label><select name="facility_id">@foreach($facilities->where('status','available') as $f)<option value="{{ $f->id }}" @selected(old('facility_id')==$f->id)>{{ $f->name }}</option>@endforeach</select></div>
         <div><label>Date</label><input type="date" name="date" min="{{ today()->toDateString() }}" value="{{ old('date') }}" required></div>
