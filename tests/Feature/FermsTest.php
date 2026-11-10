@@ -29,6 +29,18 @@ class FermsTest extends TestCase {
       $this->assertSame('+639123456789',$user->fresh()->phone);
     }
   }
+  public function test_validation_errors_are_shown_in_a_dismissible_popup(): void {
+    $student=$this->u('student');
+
+    $this->actingAs($student)->post('/profile',['name'=>$student->name,'phone'=>''])
+      ->assertSessionHasErrors('phone');
+
+    $this->get('/profile')->assertOk()
+      ->assertSee('<dialog class="confirm-dialog error-dialog" id="error-dialog"',false)
+      ->assertSee('Something went wrong')
+      ->assertSee('The phone field is required.')
+      ->assertSee('data-close-error',false);
+  }
   public function test_phone_backfill_only_fills_missing_numbers(): void {
     $missing=$this->u('student');
     $missing->update(['phone'=>null]);

@@ -6,11 +6,28 @@
   <div class="top2"><div class="brand"><i style="background:#fff;color:var(--blue);box-shadow:none">F</i><div><b style="color:#fff;font-size:18px">MCC FERMS</b><small style="color:#d6e8ff;max-width:none">Facility Equipment Reservation Management System</small></div></div>
     <h1 style="color:#fff;margin:22px 0 4px">Welcome</h1><div style="color:#d6e8ff;font-size:14px">Sign in to reserve facilities and borrow equipment.</div></div>
   <div class="in">
-    @if($errors->any())<div class="alert err">{{ $errors->first() }}</div>@endif
     <a class="btn" style="display:block;text-align:center" href="/auth/microsoft">Sign in with MCC Microsoft account</a>
     @if(app()->environment('local'))
       <div style="margin-top:22px;font-size:12px;font-weight:700;color:var(--mute);letter-spacing:.08em">DEVELOPMENT LOGIN</div>
       <div class="dev">@foreach(['student','organization','staff','admin'] as $r)<a class="btn s l" style="text-align:center" href="/dev-login/{{ $r }}">{{ ucfirst($r) }}</a>@endforeach</div>
     @endif
   </div>
-</div></body></html>
+</div>
+@if($errors->any())
+  <dialog class="confirm-dialog error-dialog" id="error-dialog" aria-labelledby="error-dialog-title">
+    <div class="add-form-header"><h3 id="error-dialog-title">Sign-in error</h3></div>
+    <div class="error-dialog-messages">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>
+    <div class="row confirm-actions"><button class="btn" type="button" data-close-error>OK</button></div>
+  </dialog>
+  <script>
+    const errorDialog = document.getElementById('error-dialog');
+    errorDialog.showModal();
+    errorDialog.querySelector('[data-close-error]').addEventListener('click', function () {
+      errorDialog.close();
+    });
+    errorDialog.addEventListener('click', function (event) {
+      if (event.target === errorDialog) errorDialog.close();
+    });
+  </script>
+@endif
+</body></html>

@@ -49,6 +49,7 @@ dialog.add-form form>[type="submit"]{margin-top:12px}
 .confirm-dialog{width:min(440px,calc(100vw - 32px));margin:auto;padding:22px;border:1px solid var(--line);border-radius:16px;box-shadow:0 24px 70px rgba(18,42,82,.24)}
 .confirm-dialog::backdrop{background:rgba(13,31,60,.42);backdrop-filter:blur(2px)}
 .confirm-dialog>p{margin:20px 0;color:var(--ink);line-height:1.6}
+.error-dialog-messages p{margin:12px 0;color:var(--bad);line-height:1.5}.error-dialog-messages p:first-child{margin-top:20px}
 .request-followup-dialog .add-form-header,.request-followup-dialog>p{text-align:center}.request-followup-dialog .add-form-header{justify-content:center}
 .request-followup-dialog .confirm-actions .btn{display:flex;align-items:center;justify-content:center}
 .confirm-change-list{margin:0;padding:12px 12px 12px 30px;border-radius:12px;background:var(--sky2);color:var(--ink);font-size:13px;line-height:1.7}

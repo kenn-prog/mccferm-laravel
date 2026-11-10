@@ -43,10 +43,16 @@
 <div class="wrap">
   <main>
     @if(session('ok'))<div class="alert ok">{{ session('ok') }}</div>@endif
-    @if($errors->any())<div class="alert err">@foreach($errors->all() as $e){{ $e }}<br>@endforeach</div>@endif
     @yield('content')
   </main>
 </div>
+@if($errors->any())
+  <dialog class="confirm-dialog error-dialog" id="error-dialog" aria-labelledby="error-dialog-title">
+    <div class="add-form-header"><h3 id="error-dialog-title">Something went wrong</h3></div>
+    <div class="error-dialog-messages">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>
+    <div class="row confirm-actions"><button class="btn" type="button" data-close-error>OK</button></div>
+  </dialog>
+@endif
 <dialog class="card confirm-dialog" id="confirm-edit-dialog">
   <div class="add-form-header">
     <h3 data-confirm-edit-title>Confirm changes</h3>
@@ -60,6 +66,16 @@
   </div>
 </dialog>
 <script>
+const errorDialog = document.getElementById('error-dialog');
+if (errorDialog) {
+  errorDialog.showModal();
+  errorDialog.querySelector('[data-close-error]').addEventListener('click', function () {
+    errorDialog.close();
+  });
+  errorDialog.addEventListener('click', function (event) {
+    if (event.target === errorDialog) errorDialog.close();
+  });
+}
 document.querySelectorAll('dialog.add-form').forEach(function (dialog) {
   dialog.addEventListener('close', function () {
     document.querySelectorAll('[data-toggle-target], [data-open-selected-dialog]').forEach(function (button) {
