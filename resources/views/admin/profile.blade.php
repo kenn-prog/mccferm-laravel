@@ -28,8 +28,8 @@
             <label>Department / Office</label>
             <input name="organization_class" value="{{ old('organization_class', auth()->user()->organization_class) }}" placeholder="e.g., ICT Office, Registrar, Admin Office">
             
-            <label>Phone Number (Optional)</label>
-            <input type="tel" name="phone" value="{{ old('phone', auth()->user()->phone ?? '') }}" placeholder="+63 9XX XXX XXXX">
+            <label>Phone Number</label>
+            <input type="tel" name="phone" value="{{ old('phone', auth()->user()->phone ?? '') }}" placeholder="09XX XXX XXXX" required>
             
             <button class="btn" style="margin-top: 8px;">Save Changes</button>
         </form>

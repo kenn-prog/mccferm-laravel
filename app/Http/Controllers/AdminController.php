@@ -22,7 +22,7 @@ class AdminController extends Controller {
   public function release(FermsRequest $req) {
     try { DB::transaction(function() use($req){ abort_unless($req->type==='equipment'&&$req->status==='approved',422); $i=$req->item; $eq=Equipment::lockForUpdate()->find($i->equipment_id);
       if($eq->available_quantity<$i->quantity) throw new \RuntimeException('Insufficient stock to release.'); $eq->decrement('available_quantity',$i->quantity);
-      Transaction::create(['request_id'=>$req->id,'equipment_id'=>$eq->id,'user_id'=>$req->user_id,'quantity'=>$i->quantity,'borrow_date'=>$i->borrow_date,'expected_return'=>$i->expected_return]);
+      Transaction::create(['request_id'=>$req->id,'equipment_id'=>$eq->id,'user_id'=>$req->user_id,'quantity'=>$i->quantity,'borrow_date'=>$i->borrow_date,'borrow_time'=>$i->borrow_time,'expected_return'=>$i->expected_return,'expected_return_time'=>$i->expected_return_time]);
       $req->update(['status'=>'released']); $this->notify($req->user_id,'Equipment released',"{$eq->name} x{$i->quantity} released. Return by {$i->expected_return}.",'info'); }); }
     catch(\RuntimeException $e){ return back()->withErrors($e->getMessage()); } return back()->with('ok','Equipment released.');
   }
@@ -45,7 +45,7 @@ class AdminController extends Controller {
    public function profile() { return view('admin.profile'); }
   
   public function updateProfile(Request $r) {
-    $d = $r->validate(['name'=>'required|string|max:255','organization_class'=>'nullable|string|max:100','phone'=>'nullable|string|max:20']);
+    $d = $r->validate(['name'=>'required|string|max:255','organization_class'=>'nullable|string|max:100','phone'=>'required|string|max:20']);
     $r->user()->update($d);
     return back()->with('ok','Profile updated successfully.');
   }

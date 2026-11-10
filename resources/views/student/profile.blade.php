@@ -26,8 +26,8 @@
             <label>{{ auth()->user()->role === 'organization' ? 'Organization / Class' : 'Class / Section' }}</label>
             <input name="organization_class" value="{{ old('organization_class', auth()->user()->organization_class) }}" placeholder="{{ auth()->user()->role === 'organization' ? 'Organization or class' : 'e.g., BSIT 3A' }}">
 
-            <label>Phone Number (Optional)</label>
-            <input type="tel" name="phone" value="{{ old('phone', auth()->user()->phone ?? '') }}" placeholder="+63 9XX XXX XXXX">
+            <label>Phone Number</label>
+            <input type="tel" name="phone" value="{{ old('phone', auth()->user()->phone ?? '') }}" placeholder="09XX XXX XXXX" required>
 
             <button class="btn" style="margin-top: 8px;">Save Changes</button>
         </form>

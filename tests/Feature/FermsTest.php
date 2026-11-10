@@ -14,6 +14,41 @@ class FermsTest extends TestCase {
     $this->actingAs($this->u('admin'))->post("/admin/users/{$target->id}",['role'=>'staff','is_active'=>1]);
     $this->assertSame('staff',$target->fresh()->role);
   }
+  public function test_phone_number_is_required_for_student_and_admin_profiles(): void {
+    foreach (['student'=>'/profile','staff'=>'/admin/profile'] as $role=>$path) {
+      $user=$this->u($role);
+      $this->actingAs($user)->get($path)->assertOk()
+        ->assertSee('Phone Number')
+        ->assertSee('name="phone"',false)
+        ->assertSee('name="phone" value="" placeholder="09XX XXX XXXX" required',false);
+
+      $this->post($path,['name'=>$user->name,'phone'=>''])->assertSessionHasErrors('phone');
+      $this->post($path,['name'=>$user->name,'phone'=>'+639123456789'])
+        ->assertRedirect($path)
+        ->assertSessionHasNoErrors();
+      $this->assertSame('+639123456789',$user->fresh()->phone);
+    }
+  }
+  public function test_phone_backfill_only_fills_missing_numbers(): void {
+    $missing=$this->u('student');
+    $missing->update(['phone'=>null]);
+    $blank=$this->u('organization');
+    $blank->update(['phone'=>'']);
+    $existing=$this->u('staff');
+    $existing->update(['phone'=>'+639123456789']);
+
+    $backfill=require database_path('migrations/2026_11_10_000002_fill_missing_user_phone_numbers.php');
+    $backfill->up();
+    $correction=require database_path('migrations/2026_11_10_000003_correct_sample_phone_number_format.php');
+    $correction->up();
+    $uniqueness=require database_path('migrations/2026_11_10_000004_make_sample_phone_numbers_unique.php');
+    $uniqueness->up();
+
+    $this->assertMatchesRegularExpression('/^09\d{2} \d{3} \d{4}$/',$missing->fresh()->phone);
+    $this->assertMatchesRegularExpression('/^09\d{2} \d{3} \d{4}$/',$blank->fresh()->phone);
+    $this->assertNotSame($missing->fresh()->phone,$blank->fresh()->phone);
+    $this->assertSame('+639123456789',$existing->fresh()->phone);
+  }
   public function test_rejected_and_cancelled_requests_are_shown_in_reports_not_request_queue(): void {
     $staff=$this->u('staff');
     $student=$this->u('student');
@@ -55,13 +90,51 @@ class FermsTest extends TestCase {
     $this->actingAs($s)->post('/reservations',['facility_id'=>$f->id,'date'=>now()->addDay()->toDateString(),'start_time'=>'10:00','end_time'=>'12:00','purpose'=>'Meeting'])->assertSessionHasErrors();
     $this->assertSame(1,Reservation::count());
   }
+  public function test_facility_and_equipment_times_are_limited_to_eight_am_through_eight_pm(): void {
+    $student=$this->u('student');
+    $facility=Facility::create(['name'=>'Hall','location'=>'Main','capacity'=>50]);
+    $equipment=Equipment::create(['name'=>'Projector','category'=>'AV','total_quantity'=>5,'available_quantity'=>5]);
+    $date=today()->addDay()->toDateString();
+
+    $this->actingAs($student)->post('/reservations',[
+      'facility_id'=>$facility->id,'date'=>$date,'start_time'=>'07:59','end_time'=>'08:30','purpose'=>'Early request',
+    ])->assertSessionHasErrors('start_time');
+    $this->post('/reservations',[
+      'facility_id'=>$facility->id,'date'=>$date,'start_time'=>'19:00','end_time'=>'20:01','purpose'=>'Late request',
+    ])->assertSessionHasErrors('end_time');
+    $this->post('/reservations',[
+      'facility_id'=>$facility->id,'date'=>$date,'start_time'=>'08:00','end_time'=>'20:00','purpose'=>'Valid request',
+    ])->assertRedirect('/requests');
+
+    $this->post('/borrow',[
+      'equipment_id'=>$equipment->id,'quantity'=>1,'borrow_date'=>$date,'borrow_time'=>'07:59',
+      'expected_return'=>$date,'expected_return_time'=>'09:00','purpose'=>'Early pickup',
+    ])->assertSessionHasErrors('borrow_time');
+    $this->post('/borrow',[
+      'equipment_id'=>$equipment->id,'quantity'=>1,'borrow_date'=>$date,'borrow_time'=>'09:00',
+      'expected_return'=>$date,'expected_return_time'=>'20:01','purpose'=>'Late return',
+    ])->assertSessionHasErrors('expected_return_time');
+    $this->post('/borrow',[
+      'equipment_id'=>$equipment->id,'quantity'=>1,'borrow_date'=>$date,'borrow_time'=>'10:00',
+      'expected_return'=>$date,'expected_return_time'=>'10:00','purpose'=>'Return time order',
+    ])->assertSessionHasErrors('expected_return_time');
+    $this->post('/borrow',[
+      'equipment_id'=>$equipment->id,'quantity'=>1,'borrow_date'=>$date,'borrow_time'=>'08:00',
+      'expected_return'=>$date,'expected_return_time'=>'20:00','purpose'=>'Valid pickup',
+    ])->assertRedirect('/requests');
+
+    $item=EquipmentItem::latest('id')->firstOrFail();
+    $this->assertSame('08:00',$item->borrow_time);
+    $this->assertSame('20:00',$item->expected_return_time);
+  }
   public function test_equipment_release_and_return_update_stock(): void {
     $eq=Equipment::create(['name'=>'Projector','category'=>'AV','total_quantity'=>5,'available_quantity'=>5]); $s=$this->u('student'); $a=$this->u('staff');
-    $this->actingAs($s)->post('/borrow',['equipment_id'=>$eq->id,'quantity'=>2,'borrow_date'=>today()->toDateString(),'expected_return'=>today()->addDay()->toDateString(),'purpose'=>'Class']);
+    $this->actingAs($s)->post('/borrow',['equipment_id'=>$eq->id,'quantity'=>2,'borrow_date'=>today()->toDateString(),'borrow_time'=>'09:00','expected_return'=>today()->addDay()->toDateString(),'expected_return_time'=>'10:00','purpose'=>'Class']);
     $q=FermsRequest::firstOrFail();
     $this->actingAs($a)->post("/admin/requests/{$q->id}/decide",['decision'=>'approved']);
     $this->post("/admin/requests/{$q->id}/release"); $this->assertSame(3,$eq->fresh()->available_quantity);
-    $tx=\App\Models\Transaction::firstOrFail(); $this->post("/admin/transactions/{$tx->id}/return"); $this->assertSame(5,$eq->fresh()->available_quantity);
+    $tx=\App\Models\Transaction::firstOrFail(); $this->assertSame('09:00',$tx->borrow_time); $this->assertSame('10:00',$tx->expected_return_time);
+    $this->post("/admin/transactions/{$tx->id}/return"); $this->assertSame(5,$eq->fresh()->available_quantity);
   }
   public function test_equipment_return_date_cannot_exceed_five_days_after_borrow_date(): void {
     $eq=Equipment::create(['name'=>'Projector','category'=>'AV','total_quantity'=>5,'available_quantity'=>5]);
@@ -70,7 +143,9 @@ class FermsTest extends TestCase {
       'equipment_id'=>$eq->id,
       'quantity'=>1,
       'borrow_date'=>today()->toDateString(),
+      'borrow_time'=>'09:00',
       'expected_return'=>today()->addDays(6)->toDateString(),
+      'expected_return_time'=>'10:00',
       'purpose'=>'Class',
     ])->assertSessionHasErrors('expected_return');
     $this->assertSame(0,FermsRequest::count());
@@ -84,13 +159,17 @@ class FermsTest extends TestCase {
       ->assertSee('>Projector</option>',false)
       ->assertDontSee('Projector (3)',false)
       ->assertSee('Quantity (3 available)')
-      ->assertSee('max="3"',false);
+      ->assertSee('max="3"',false)
+      ->assertSee('name="borrow_time" min="08:00" max="20:00"',false)
+      ->assertSee('name="expected_return_time" min="08:00" max="20:00"',false);
 
     $this->post('/borrow',[
       'equipment_id'=>$equipment->id,
       'quantity'=>4,
       'borrow_date'=>today()->toDateString(),
+      'borrow_time'=>'09:00',
       'expected_return'=>today()->addDay()->toDateString(),
+      'expected_return_time'=>'10:00',
       'purpose'=>'Class',
     ])->assertSessionHasErrors('quantity');
     $this->assertSame(0,FermsRequest::count());
@@ -119,7 +198,9 @@ class FermsTest extends TestCase {
       'equipment_id'=>$equipment->id,
       'quantity'=>1,
       'borrow_date'=>today()->addDay()->toDateString(),
+      'borrow_time'=>'09:00',
       'expected_return'=>today()->addDays(2)->toDateString(),
+      'expected_return_time'=>'10:00',
       'purpose'=>'Class activity',
     ])->assertRedirect('/requests')->assertSessionHas('request_reminder',true);
 
@@ -136,7 +217,9 @@ class FermsTest extends TestCase {
       'equipment_id'=>$equipment->id,
       'quantity'=>1,
       'borrow_date'=>today()->addDay()->toDateString(),
+      'borrow_time'=>'09:00',
       'expected_return'=>today()->addDays(2)->toDateString(),
+      'expected_return_time'=>'10:00',
       'purpose'=>'Class activity',
     ])->assertRedirect('/requests')->assertSessionHas('request_followup','facility');
 
@@ -169,12 +252,16 @@ class FermsTest extends TestCase {
       'equipment_id'=>$equipment->id,
       'quantity'=>2,
       'borrow_date'=>today()->toDateString(),
+      'borrow_time'=>'09:00',
       'expected_return'=>today()->addDays(2)->toDateString(),
+      'expected_return_time'=>'10:00',
       'purpose'=>'Updated class activity',
     ])->assertStatus(302);
 
     $this->assertSame('Updated class activity',$request->fresh()->purpose);
     $this->assertSame(2,$request->item->fresh()->quantity);
+    $this->assertSame('09:00',$request->item->fresh()->borrow_time);
+    $this->assertSame('10:00',$request->item->fresh()->expected_return_time);
   }
   public function test_student_can_cancel_own_pending_facility_request(): void {
     $student=$this->u('student');

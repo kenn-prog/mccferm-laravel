@@ -28,7 +28,9 @@
       <div><label for="borrow-equipment">Equipment</label><select id="borrow-equipment" name="equipment_id" required>@forelse($borrowableItems as $e)<option value="{{ $e->id }}" data-available="{{ $e->available_quantity }}" @selected(old('equipment_id')==$e->id)>{{ $e->name }}</option>@empty<option value="" disabled selected>No equipment currently available</option>@endforelse</select></div>
       <div><label for="borrow-quantity" id="borrow-quantity-label">Quantity ({{ $selectedBorrowableItem?->available_quantity ?? 0 }} available)</label><input id="borrow-quantity" type="number" name="quantity" min="1" max="{{ $selectedBorrowableItem?->available_quantity ?? 0 }}" value="{{ old('quantity',1) }}" required></div>
       <div><label>Borrow date</label><input type="date" name="borrow_date" min="{{ today()->toDateString() }}" value="{{ old('borrow_date') }}" required></div>
+      <div><label>Pickup time (8:00 AM–8:00 PM)</label><input type="time" name="borrow_time" min="08:00" max="20:00" value="{{ old('borrow_time') }}" required></div>
       <div><label>Expected return</label><input type="date" name="expected_return" min="{{ old('borrow_date') }}" max="{{ old('borrow_date') ? \Illuminate\Support\Carbon::parse(old('borrow_date'))->addDays(5)->toDateString() : '' }}" value="{{ old('expected_return') }}" required><small style="display:block;color:var(--mute);margin-top:-8px">Maximum 5 days after the borrow date.</small></div>
+      <div><label>Return time (8:00 AM–8:00 PM)</label><input type="time" name="expected_return_time" min="08:00" max="20:00" value="{{ old('expected_return_time') }}" required></div>
     </div>
     <label>Purpose</label><input name="purpose" required>
     <button class="btn">Submit request</button>

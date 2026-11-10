@@ -10,7 +10,7 @@
       <tr>
         <td>{{ ucfirst($q->type) }}</td>
         <td>{{ $q->type==='facility' ? $q->reservation->facility->name : $q->item->equipment->name.' ×'.$q->item->quantity }}<br><small>{{ $q->purpose }}</small></td>
-        <td>{{ $q->type==='facility' ? $q->reservation->starts_at->format('M d, g:i A') : $q->item->borrow_date->format('M d').' → '.$q->item->expected_return->format('M d') }}</td>
+        <td>{{ $q->type==='facility' ? $q->reservation->starts_at->format('M d, g:i A') : $q->item->borrow_date->format('M d').' '.($q->item->borrow_time ? \Illuminate\Support\Carbon::parse($q->item->borrow_time)->format('g:i A') : '').' → '.$q->item->expected_return->format('M d').' '.($q->item->expected_return_time ? \Illuminate\Support\Carbon::parse($q->item->expected_return_time)->format('g:i A') : '') }}</td>
         <td><span class="badge {{ $q->status }}">{{ ucfirst($q->status) }}</span></td>
       </tr>
     @empty

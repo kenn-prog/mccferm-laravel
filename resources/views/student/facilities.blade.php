@@ -25,8 +25,8 @@
       <div class="row">
         <div><label>Facility</label><select name="facility_id">@foreach($facilities->where('status','available') as $f)<option value="{{ $f->id }}" @selected(old('facility_id')==$f->id)>{{ $f->name }}</option>@endforeach</select></div>
         <div><label>Date</label><input type="date" name="date" min="{{ today()->toDateString() }}" value="{{ old('date') }}" required></div>
-        <div><label>Start</label><input type="time" name="start_time" value="{{ old('start_time') }}" required></div>
-        <div><label>End</label><input type="time" name="end_time" value="{{ old('end_time') }}" required></div>
+        <div><label>Start (8:00 AM–8:00 PM)</label><input type="time" name="start_time" min="08:00" max="20:00" value="{{ old('start_time') }}" required></div>
+        <div><label>End (8:00 AM–8:00 PM)</label><input type="time" name="end_time" min="08:00" max="20:00" value="{{ old('end_time') }}" required></div>
         <div><label>Participants</label><input type="number" name="participants" min="1" value="{{ old('participants') }}"></div>
       </div>
       <label>Purpose / activity</label><input name="purpose" value="{{ old('purpose') }}" required>
