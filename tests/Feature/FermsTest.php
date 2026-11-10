@@ -26,6 +26,10 @@ class FermsTest extends TestCase {
 
     $this->actingAs($staff)->get('/admin/requests')->assertOk()
       ->assertSee('Pending request')
+      ->assertSee('id="request-decision-dialog"',false)
+      ->assertSee('data-request-decision="approved"',false)
+      ->assertSee('data-request-decision="rejected"',false)
+      ->assertSee('Are you sure you want to')
       ->assertDontSee('Rejected request')
       ->assertDontSee('Cancelled request')
       ->assertDontSee('Released request')
