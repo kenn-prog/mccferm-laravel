@@ -6,7 +6,7 @@ class AdminController extends Controller {
   private function notify($uid,$title,$msg,$type='info'){ Notice::create(['user_id'=>$uid,'title'=>$title,'message'=>$msg,'type'=>$type]); }
   public function dashboard() { return view('admin.dashboard',['s'=>['Total reservations'=>Reservation::count(),'Pending requests'=>FermsRequest::where('status','pending')->count(),'Approved reservations'=>Reservation::where('status','approved')->count(),'Available facilities'=>Facility::where('status','available')->count(),'Total equipment'=>Equipment::sum('total_quantity'),'Currently borrowed'=>Transaction::where('status','borrowed')->sum('quantity')],
     'upcoming'=>Reservation::with('facility','request.user')->where('status','approved')->where('starts_at','>=',now())->orderBy('starts_at')->limit(6)->get(),'recent'=>FermsRequest::with('user')->latest()->limit(6)->get()]); }
-  public function requests(Request $r) { $q=FermsRequest::with(['user','reservation.facility','item.equipment'])->latest(); if($r->status) $q->where('status',$r->status); if($r->type) $q->where('type',$r->type);
+  public function requests(Request $r) { $q=FermsRequest::with(['user','reservation.facility','item.equipment'])->whereNotIn('status',['rejected','cancelled','released','returned'])->latest(); if($r->status) $q->where('status',$r->status); if($r->type) $q->where('type',$r->type);
     return view('admin.requests',['rows'=>$q->get(),'trans'=>Transaction::with('equipment','user')->where('status','borrowed')->get()]); }
   public function decide(Request $r, FermsRequest $req) {
     $r->validate(['decision'=>'required|in:approved,rejected']); abort_unless($req->status==='pending',422,'Request already processed.');
@@ -40,7 +40,7 @@ class AdminController extends Controller {
     if($equipment){ $borrowed=$equipment->total_quantity-$equipment->available_quantity; if($d['total_quantity']<$borrowed) return back()->withErrors("Total cannot be below currently borrowed ($borrowed)."); $d['available_quantity']=$d['total_quantity']-$borrowed; $equipment->update($d);} else { $d['available_quantity']=$d['total_quantity']; Equipment::create($d);} return back()->with('ok','Equipment saved.'); }
   public function users() { return view('admin.users',['rows'=>User::orderBy('role')->orderBy('name')->get()]); }
   public function updateUser(Request $r, User $user) { abort_unless($r->user()->role==='admin',403); $d=$r->validate(['role'=>'required|in:student,organization,staff,admin','is_active'=>'boolean']); $user->update(['role'=>$d['role'],'is_active'=>$r->boolean('is_active')]); return back()->with('ok','User updated.'); }
-  public function reports() { return view('admin.reports',['reservations'=>Reservation::with('facility','request.user')->latest()->limit(100)->get(),'tx'=>Transaction::with('equipment','user')->latest()->limit(100)->get()]); }
+  public function reports() { return view('admin.reports',['reservations'=>Reservation::with('facility','request.user')->latest()->limit(100)->get(),'tx'=>Transaction::with('equipment','user')->latest()->limit(100)->get(),'closedRequests'=>FermsRequest::with(['user','reservation.facility','item.equipment'])->whereIn('status',['rejected','cancelled','released','returned'])->latest()->limit(100)->get()]); }
  
    public function profile() { return view('admin.profile'); }
   
@@ -68,5 +68,3 @@ class AdminController extends Controller {
   }
 
 }
-
-

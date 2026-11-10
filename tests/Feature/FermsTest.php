@@ -14,6 +14,36 @@ class FermsTest extends TestCase {
     $this->actingAs($this->u('admin'))->post("/admin/users/{$target->id}",['role'=>'staff','is_active'=>1]);
     $this->assertSame('staff',$target->fresh()->role);
   }
+  public function test_rejected_and_cancelled_requests_are_shown_in_reports_not_request_queue(): void {
+    $staff=$this->u('staff');
+    $student=$this->u('student');
+    $equipment=Equipment::create(['name'=>'Projector','category'=>'AV','total_quantity'=>5,'available_quantity'=>5]);
+
+    foreach (['rejected','cancelled','released','returned','pending'] as $status) {
+      $request=FermsRequest::create(['user_id'=>$student->id,'type'=>'equipment','purpose'=>ucfirst($status).' request','status'=>$status]);
+      EquipmentItem::create(['request_id'=>$request->id,'equipment_id'=>$equipment->id,'quantity'=>1,'borrow_date'=>today(),'expected_return'=>today()->addDay()]);
+    }
+
+    $this->actingAs($staff)->get('/admin/requests')->assertOk()
+      ->assertSee('Pending request')
+      ->assertDontSee('Rejected request')
+      ->assertDontSee('Cancelled request')
+      ->assertDontSee('Released request')
+      ->assertDontSee('Returned request')
+      ->assertDontSee('rejected</option>')
+      ->assertDontSee('cancelled</option>')
+      ->assertDontSee('released</option>')
+      ->assertDontSee('returned</option>');
+
+    $this->get('/admin/requests?status=rejected')->assertOk()
+      ->assertDontSee('Rejected request');
+    $this->get('/admin/reports')->assertOk()
+      ->assertSee('Rejected, Cancelled & Completed Requests',false)
+      ->assertSee('Rejected request')
+      ->assertSee('Cancelled request')
+      ->assertSee('Released request')
+      ->assertSee('Returned request');
+  }
   public function test_conflicting_reservation_is_rejected(): void {
     $f=Facility::create(['name'=>'Hall','location'=>'Main','capacity'=>50]); $s=$this->u('student'); $other=$this->u('organization');
     $q=FermsRequest::create(['user_id'=>$other->id,'type'=>'facility','purpose'=>'x','status'=>'approved']);
