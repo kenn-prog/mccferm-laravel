@@ -19,7 +19,6 @@ class SuperAdminController extends Controller {
             'Total Facilities' => Facility::count(),
             'Total Equipment' => Equipment::sum('total_quantity'),
             'Pending Requests' => FermsRequest::where('status', 'pending')->count(),
-            'Active Transactions' => Transaction::where('status', 'borrowed')->count(),
         ];
 
         // Recent system logs
