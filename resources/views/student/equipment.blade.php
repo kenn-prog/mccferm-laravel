@@ -16,21 +16,60 @@
 <div class="split">
   <div class="equipment-grid">
     @foreach($items as $e)
-      @php $ok = $e->available_quantity>0 && $e->status==='available'; $g = strtolower($e->category); @endphp
-      <div class="equipment-card" data-cat="{{ $g }}">
-        <div class="card-header" style="background:linear-gradient(135deg,{{ in_array($g,['av']) ? '#9c27b0,#ce93d8' : (in_array($g,['sports']) ? '#ff6f00,#ffb74d' : (in_array($g,['furniture']) ? '#0097a7,#4dd0e1' : '#1c4fa8,#4aa8ff')) }})">
-          <svg viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
+      @php $ok = $e->available_quantity>0 && $e->status==='available'; $g = strtolower($e->category); $percent = $e->total_quantity > 0 ? round(($e->available_quantity / $e->total_quantity) * 100) : 0; @endphp
+      <div class="equipment-card-enhanced" data-cat="{{ $g }}">
+        <div class="equipment-card-header">
+          <div class="equipment-icon g-{{ in_array($g,['av','sports','furniture']) ? $g : 'def' }}">
+            <svg viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
+          </div>
+          <div class="equipment-status-badge">
+            <span class="badge {{ $ok ? 'available' : 'unavailable' }}">
+              <svg viewBox="0 0 24 24" style="width:12px;height:12px">
+                @if($ok)<path d="M5 13l4 4L19 7"/>@else<path d="M18 6L6 18M6 6l12 12"/>@endif
+              </svg>
+              {{ $ok ? 'Available' : 'Unavailable' }}
+            </span>
+          </div>
         </div>
-        <div class="card-body">
-          <div class="card-title">{{ $e->name }}</div>
-          <div class="card-subtitle">
-            <svg viewBox="0 0 24 24" style="width:14px;height:14px"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-            {{ $e->category }} · {{ $e->available_quantity }} of {{ $e->total_quantity }} available
+        <div class="equipment-card-body">
+          <div class="equipment-card-title">{{ $e->name }}</div>
+          <div class="equipment-card-meta">
+            <div class="equipment-category">
+              <svg viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></svg>
+              {{ $e->category }}
+            </div>
+            @if($e->condition && $e->condition !== 'Good')
+            <div class="equipment-condition" title="Condition: {{ $e->condition }}">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+              {{ $e->condition }}
+            </div>
+            @endif
           </div>
-          <div class="card-footer">
-            <span class="badge {{ $ok ? 'available' : 'unavailable' }}">{{ $ok ? 'Available' : 'Unavailable' }}</span>
-            @if($ok)<button type="button" class="btn s" data-open-selected-dialog aria-haspopup="dialog" aria-expanded="false" aria-controls="borrow-dialog" onclick="pick('equipment_id','{{ $e->id }}','borrow-dialog'); updateBorrowQuantityLimit()">Borrow</button>@endif
+          <div class="equipment-availability">
+            <div class="availability-header">
+              <span class="availability-label">Availability</span>
+              <span class="availability-count">
+                <strong>{{ $e->available_quantity }}</strong> / {{ $e->total_quantity }}
+              </span>
+            </div>
+            <div class="availability-bar">
+              <div class="availability-progress" style="width:{{ $percent }}%"></div>
+            </div>
+            <div class="availability-text">
+              {{ $e->available_quantity }} unit{{ $e->available_quantity != 1 ? 's' : '' }} available
+            </div>
           </div>
+          @if($ok)
+          <button type="button" class="btn-equipment-borrow" data-open-selected-dialog aria-haspopup="dialog" aria-expanded="false" aria-controls="borrow-dialog" onclick="pick('equipment_id','{{ $e->id }}','borrow-dialog'); updateBorrowQuantityLimit()">
+            <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+            Request to Borrow
+          </button>
+          @else
+          <div class="equipment-unavailable-notice">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+            <span>Currently unavailable for borrowing</span>
+          </div>
+          @endif
         </div>
       </div>
     @endforeach
