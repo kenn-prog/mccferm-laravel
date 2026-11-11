@@ -1,21 +1,23 @@
 @extends('layouts.app')
 @section('content')
-<h1>Profile & Settings</h1>
-<p class="sub">Manage your account information and system preferences.</p>
+<div class="page-header">
+  <div class="page-header-content">
+    <h1>Profile & Settings</h1>
+    <p class="sub">Manage your account information and system preferences.</p>
+  </div>
+</div>
 
-<!-- Profile Overview -->
-<div class="card hero">
-    <b>{{ auth()->user()->name }}</b>
+<div class="hero-card" style="margin-bottom:20px">
+    <b style="font-size:18px">{{ auth()->user()->name }}</b>
     <p style="margin: 8px 0 0; display: block;">
         {{ auth()->user()->email }} · 
-        <span class="badge" style="background: rgba(255,255,255,0.2); color: #fff;">{{ ucfirst(auth()->user()->role) }}</span>
+        <span class="badge" style="background: rgba(255,255,255,0.25); color: #fff; border:1px solid rgba(255,255,255,0.3)">{{ ucfirst(auth()->user()->role) }}</span>
     </p>
 </div>
 
-<div class="grid profile-grid" style="grid-template-columns: 2fr 1fr;">
-    <!-- Personal Information -->
-    <div class="card">
-        <h3>Personal Information</h3>
+<div class="content-grid" style="grid-template-columns: 2fr 1fr;">
+    <div class="enhanced-card">
+        <div class="cardhead"><h3>Personal Information</h3></div>
         <form method="post" action="/admin/profile">
             @csrf
             <label>Full Name</label>

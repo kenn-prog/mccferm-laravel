@@ -10,7 +10,6 @@
       @csrf
       <button class="btn warn o s" type="submit" onclick="return confirm('Clear all log entries? This cannot be undone.')">Clear Logs</button>
     </form>
-    <a class="btn o" href="/superadmin">← Back</a>
   </div>
 </div>
 

@@ -5,7 +5,6 @@
     <h1>System Monitoring</h1>
     <p class="sub">Real-time system information and performance metrics.</p>
   </div>
-  <a class="btn o" href="/superadmin">← Back</a>
 </div>
 
 <!-- System Information -->

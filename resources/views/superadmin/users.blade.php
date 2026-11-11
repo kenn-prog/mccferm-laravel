@@ -5,7 +5,6 @@
     <h1>User Management</h1>
     <p class="sub">Manage user accounts, roles, and permissions.</p>
   </div>
-  <a class="btn o" href="/superadmin">← Back</a>
 </div>
 
 <!-- Role Statistics -->

@@ -5,7 +5,6 @@
     <h1>System Settings</h1>
     <p class="sub">Configure system-wide parameters and behavior.</p>
   </div>
-  <a class="btn o" href="/superadmin">← Back to Dashboard</a>
 </div>
 
 <div class="card">

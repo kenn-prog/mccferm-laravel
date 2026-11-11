@@ -1,10 +1,50 @@
 <?php
 namespace Tests\Feature;
 use App\Models\{Equipment,EquipmentItem,Facility,FermsRequest,Notice,Reservation,Transaction,User};
+use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase; use Tests\TestCase;
 class FermsTest extends TestCase {
   use RefreshDatabase;
   private function u(string $role): User { return User::create(['name'=>ucfirst($role),'email'=>"$role@mcc.edu.ph",'role'=>$role,'is_active'=>true]); }
+  public function test_database_seeder_restores_demo_users_and_catalogue_idempotently(): void {
+    $seeder=new DatabaseSeeder();
+    $seeder->run();
+
+    $this->assertSame(
+      ['admin','organization','staff','student','superadmin'],
+      User::whereIn('role',['student','organization','staff','admin','superadmin'])->orderBy('role')->pluck('role')->all(),
+    );
+    $this->assertGreaterThanOrEqual(12,Facility::count());
+    $this->assertGreaterThanOrEqual(15,Equipment::count());
+    foreach (['student@mcc.edu.ph','organization@mcc.edu.ph'] as $email) {
+      $user=User::where('email',$email)->firstOrFail();
+      $this->assertSame(
+        ['danger','info','success','warning'],
+        Notice::where('user_id',$user->id)->orderBy('type')->distinct()->pluck('type')->all(),
+      );
+      $requests=$user->requests()->where('purpose','like','Sample %')->get();
+      $this->assertCount(5,$requests);
+      $this->assertEqualsCanonicalizing(['facility','equipment'],$requests->pluck('type')->unique()->all());
+      $this->assertEqualsCanonicalizing(['approved','cancelled','rejected','released','returned'],$requests->pluck('status')->all());
+      $this->assertEqualsCanonicalizing(['borrowed','returned'],Transaction::where('user_id',$user->id)->pluck('status')->all());
+      $this->actingAs($user)->get('/notifications')->assertOk()
+        ->assertSee('Success')->assertSee('Warning')->assertSee('Danger')->assertSee('Info');
+      $this->get('/transactions')->assertOk()
+        ->assertSee('Facility')->assertSee('Equipment')
+        ->assertSee('Approved')->assertSee('Cancelled')->assertSee('Rejected')->assertSee('Released')->assertSee('Returned');
+    }
+    $userCount=User::count();
+    $facilityCount=Facility::count();
+    $equipmentCount=Equipment::count();
+    $availableProjectors=Equipment::where('name','Projector')->value('available_quantity');
+
+    $seeder->run();
+
+    $this->assertSame($userCount,User::count());
+    $this->assertSame($facilityCount,Facility::count());
+    $this->assertSame($equipmentCount,Equipment::count());
+    $this->assertSame($availableProjectors,Equipment::where('name','Projector')->value('available_quantity'));
+  }
   public function test_guests_are_redirected_to_login(): void { $this->get('/admin')->assertRedirect('/login'); }
   public function test_student_cannot_open_admin_pages(): void { $this->actingAs($this->u('student'))->get('/admin')->assertForbidden(); }
   public function test_staff_cannot_open_student_pages(): void { $this->actingAs($this->u('staff'))->get('/dashboard')->assertForbidden(); }

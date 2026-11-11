@@ -1,24 +1,69 @@
 @extends('layouts.app')
 @section('content')
 @php $cats = $items->pluck('category')->unique()->values(); $total=$items->sum('total_quantity'); $avail=$items->sum('available_quantity'); $borrowableItems=$items->where('status','available')->where('available_quantity','>',0); $selectedBorrowableItem=$borrowableItems->firstWhere('id',old('equipment_id')) ?? $borrowableItems->first(); @endphp
-<div class="head"><div><div class="eyebrow">Inventory</div><h1>Equipment</h1><p class="sub">Check availability and request to borrow.</p></div><button class="btn" type="button" data-toggle-target="borrow-dialog" aria-haspopup="dialog" aria-expanded="false" aria-controls="borrow-dialog">+ Borrow equipment</button></div>
+<div class="page-header">
+  <div class="page-header-content">
+    <div class="eyebrow">Inventory</div>
+    <h1>Equipment</h1>
+    <p class="sub">Check availability and request to borrow.</p>
+  </div>
+  <button class="btn btn-icon" type="button" data-toggle-target="borrow-dialog" aria-haspopup="dialog" aria-expanded="false" aria-controls="borrow-dialog">
+    <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+    Borrow equipment
+  </button>
+</div>
 <div class="chips"><button type="button" class="chip on" data-filter="all">All</button>@foreach($cats as $c)<button type="button" class="chip" data-filter="{{ strtolower($c) }}">{{ $c }}</button>@endforeach</div>
 <div class="split">
-  <div class="fgrid" style="margin:0;grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">
+  <div class="equipment-grid">
     @foreach($items as $e)
       @php $ok = $e->available_quantity>0 && $e->status==='available'; $g = strtolower($e->category); @endphp
-      <div class="ecard" data-cat="{{ $g }}">
-        <div class="eimg g-{{ in_array($g,['av','sports','furniture']) ? $g : 'def' }}"><svg viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></div>
-        <div class="fbody"><b>{{ $e->name }}</b><small>{{ $e->category }} · {{ $e->available_quantity }} of {{ $e->total_quantity }} available</small>
-          <div class="fmeta"><span class="badge {{ $ok ? 'available' : 'unavailable' }}">{{ $ok ? 'Available' : 'Unavailable' }}</span>
-            @if($ok)<button type="button" class="btn s" data-open-selected-dialog aria-haspopup="dialog" aria-expanded="false" aria-controls="borrow-dialog" onclick="pick('equipment_id','{{ $e->id }}','borrow-dialog'); updateBorrowQuantityLimit()">Borrow</button>@endif</div></div>
+      <div class="equipment-card" data-cat="{{ $g }}">
+        <div class="card-header" style="background:linear-gradient(135deg,{{ in_array($g,['av']) ? '#9c27b0,#ce93d8' : (in_array($g,['sports']) ? '#ff6f00,#ffb74d' : (in_array($g,['furniture']) ? '#0097a7,#4dd0e1' : '#1c4fa8,#4aa8ff')) }})">
+          <svg viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
+        </div>
+        <div class="card-body">
+          <div class="card-title">{{ $e->name }}</div>
+          <div class="card-subtitle">
+            <svg viewBox="0 0 24 24" style="width:14px;height:14px"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            {{ $e->category }} · {{ $e->available_quantity }} of {{ $e->total_quantity }} available
+          </div>
+          <div class="card-footer">
+            <span class="badge {{ $ok ? 'available' : 'unavailable' }}">{{ $ok ? 'Available' : 'Unavailable' }}</span>
+            @if($ok)<button type="button" class="btn s" data-open-selected-dialog aria-haspopup="dialog" aria-expanded="false" aria-controls="borrow-dialog" onclick="pick('equipment_id','{{ $e->id }}','borrow-dialog'); updateBorrowQuantityLimit()">Borrow</button>@endif
+          </div>
+        </div>
       </div>
     @endforeach
   </div>
-  <div class="card"><h3>Equipment Summary</h3>
-    <div class="item"><div><b>{{ $total }}</b><small>Total items</small></div></div>
-    <div class="item"><div><b>{{ $avail }}</b><small>Available</small></div></div>
-    <div class="item"><div><b>{{ $total-$avail }}</b><small>Borrowed</small></div></div>
+  <div class="enhanced-card">
+    <div class="cardhead"><h3>Equipment Summary</h3></div>
+    <div class="enhanced-item">
+      <div class="item-icon">
+        <svg viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/></svg>
+      </div>
+      <div class="item-content">
+        <div class="item-title">{{ $total }}</div>
+        <div class="item-subtitle">Total items</div>
+      </div>
+    </div>
+    <div class="enhanced-item">
+      <div class="item-icon">
+        <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+      </div>
+      <div class="item-content">
+        <div class="item-title">{{ $avail }}</div>
+        <div class="item-subtitle">Available</div>
+      </div>
+    </div>
+    <div class="enhanced-item">
+      <div class="item-icon">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+      </div>
+      <div class="item-content">
+        <div class="item-title">{{ $total-$avail }}</div>
+        <div class="item-subtitle">Borrowed</div>
+      </div>
+    </div>
   </div>
 </div>
 <dialog class="card add-form" id="borrow-dialog">
