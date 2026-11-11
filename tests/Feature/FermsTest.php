@@ -1,6 +1,6 @@
 <?php
 namespace Tests\Feature;
-use App\Models\{Equipment,EquipmentItem,Facility,FermsRequest,Reservation,Transaction,User};
+use App\Models\{Equipment,EquipmentItem,Facility,FermsRequest,Notice,Reservation,Transaction,User};
 use Illuminate\Foundation\Testing\RefreshDatabase; use Tests\TestCase;
 class FermsTest extends TestCase {
   use RefreshDatabase;
@@ -8,6 +8,36 @@ class FermsTest extends TestCase {
   public function test_guests_are_redirected_to_login(): void { $this->get('/admin')->assertRedirect('/login'); }
   public function test_student_cannot_open_admin_pages(): void { $this->actingAs($this->u('student'))->get('/admin')->assertForbidden(); }
   public function test_staff_cannot_open_student_pages(): void { $this->actingAs($this->u('staff'))->get('/dashboard')->assertForbidden(); }
+  public function test_staff_and_admin_can_send_return_reminders_to_student_and_organization_borrowers(): void {
+    $equipment=Equipment::create(['name'=>'Projector','category'=>'AV','total_quantity'=>5,'available_quantity'=>3]);
+    $student=null;
+
+    foreach (['student','organization'] as $role) {
+      $borrower=$this->u($role);
+      if($role==='student') $student=$borrower;
+      $transaction=Transaction::create([
+        'equipment_id'=>$equipment->id,'user_id'=>$borrower->id,'quantity'=>1,
+        'borrow_date'=>today(),'expected_return'=>today()->addDay(),'expected_return_time'=>'15:30','status'=>'borrowed',
+      ]);
+
+      $this->actingAs($this->u($role==='student'?'staff':'admin'))
+        ->get('/admin/return-reminders')->assertOk()->assertSee('Return reminders')->assertSee($borrower->name)
+        ->assertSee($role==='student'?'Student':'Organization');
+      $this->post("/admin/transactions/{$transaction->id}/remind")
+        ->assertRedirect('/admin/return-reminders')->assertSessionHas('ok');
+      $this->assertDatabaseHas('notifications',[
+        'user_id'=>$borrower->id,'title'=>'Equipment return reminder','type'=>'warning',
+      ]);
+      $notice=Notice::where('user_id',$borrower->id)->firstOrFail();
+      $this->assertStringContainsString('Projector',$notice->message);
+      $this->assertStringContainsString(today()->addDay()->format('M d, Y').' at 3:30 PM',$notice->message);
+
+      $transaction->update(['status'=>'returned']);
+      $this->post("/admin/transactions/{$transaction->id}/remind")->assertStatus(422);
+    }
+
+    $this->actingAs($student)->get('/admin/return-reminders')->assertForbidden();
+  }
   public function test_only_admin_can_change_roles(): void {
     $target=$this->u('student');
     $this->actingAs($this->u('staff'))->post("/admin/users/{$target->id}",['role'=>'admin'])->assertForbidden();

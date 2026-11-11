@@ -32,6 +32,16 @@ class AdminController extends Controller {
       $this->notify($tx->user_id,'Return recorded','Your return of '.$tx->equipment->name.' was recorded.','success'); });
     return back()->with('ok','Return recorded.');
   }
+  public function returnReminders() {
+    return view('admin.return-reminders',['rows'=>Transaction::with(['equipment','user'])->where('status','borrowed')->orderBy('expected_return')->orderBy('expected_return_time')->get()]);
+  }
+  public function sendReturnReminder(Transaction $tx) {
+    abort_unless($tx->status==='borrowed',422,'Only currently borrowed equipment can be reminded.');
+    $due=$tx->expected_return->format('M d, Y');
+    if($tx->expected_return_time) $due.=' at '.\Illuminate\Support\Carbon::parse($tx->expected_return_time)->format('g:i A');
+    $this->notify($tx->user_id,'Equipment return reminder',"Please return {$tx->equipment->name} (quantity: {$tx->quantity}) by {$due}. Contact staff if you need assistance.",'warning');
+    return back()->with('ok','Return reminder sent to '.$tx->user->name.'.');
+  }
   public function facilities() { return view('admin.facilities',['rows'=>Facility::orderBy('name')->get()]); }
   public function saveFacility(Request $r, ?Facility $facility=null) { $d=$r->validate(['name'=>'required|max:255|unique:facilities,name,'.optional($facility)->id,'location'=>'required','category'=>'required','capacity'=>'required|integer|min:1','status'=>'nullable|in:available,reserved,unavailable']);
     $facility ? $facility->update($d) : Facility::create($d); return back()->with('ok','Facility saved.'); }
@@ -39,7 +49,7 @@ class AdminController extends Controller {
   public function saveEquipment(Request $r, ?Equipment $equipment=null) { $d=$r->validate(['name'=>'required|max:255|unique:equipment,name,'.optional($equipment)->id,'category'=>'required','total_quantity'=>'required|integer|min:0','condition'=>'required','status'=>'nullable|in:available,unavailable,maintenance']);
     if($equipment){ $borrowed=$equipment->total_quantity-$equipment->available_quantity; if($d['total_quantity']<$borrowed) return back()->withErrors("Total cannot be below currently borrowed ($borrowed)."); $d['available_quantity']=$d['total_quantity']-$borrowed; $equipment->update($d);} else { $d['available_quantity']=$d['total_quantity']; Equipment::create($d);} return back()->with('ok','Equipment saved.'); }
   public function users() { return view('admin.users',['rows'=>User::orderBy('role')->orderBy('name')->get()]); }
-  public function updateUser(Request $r, User $user) { abort_unless($r->user()->role==='admin',403); $d=$r->validate(['role'=>'required|in:student,organization,staff,admin','is_active'=>'boolean']); $user->update(['role'=>$d['role'],'is_active'=>$r->boolean('is_active')]); return back()->with('ok','User updated.'); }
+  public function updateUser(Request $r, User $user) { abort_unless(in_array($r->user()->role,['admin','superadmin']),403); $d=$r->validate(['role'=>'required|in:student,organization,staff,admin','is_active'=>'boolean']); $user->update(['role'=>$d['role'],'is_active'=>$r->boolean('is_active')]); return back()->with('ok','User updated.'); }
   public function reports() { return view('admin.reports',['reservations'=>Reservation::with('facility','request.user')->latest()->limit(100)->get(),'tx'=>Transaction::with('equipment','user')->latest()->limit(100)->get(),'closedRequests'=>FermsRequest::with(['user','reservation.facility','item.equipment'])->whereIn('status',['rejected','cancelled','released','returned'])->latest()->limit(100)->get()]); }
  
    public function profile() { return view('admin.profile'); }

@@ -8,7 +8,7 @@ return new class extends Migration {
     if ($pg) DB::statement('CREATE EXTENSION IF NOT EXISTS btree_gist');
     Schema::create('users', function (Blueprint $t) {
       $t->id(); $t->string('name'); $t->string('email')->unique();
-      $t->string('role')->default('student')->index(); // student|organization|staff|admin
+      $t->string('role')->default('student')->index(); // student|organization|staff|admin|superadmin
       $t->string('student_employee_id')->nullable()->unique(); $t->string('organization_class')->nullable();
       $t->boolean('is_active')->default(true); $t->string('password')->nullable(); $t->rememberToken(); $t->timestamps();
     });

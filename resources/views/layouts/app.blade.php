@@ -21,14 +21,16 @@
     'users'=>'<circle cx="9" cy="8" r="3.5"/><path d="M2 20c0-3.5 3-5.5 7-5.5s7 2 7 5.5M17 11a3 3 0 100-6M22 19c0-2.5-2-4-4-4.5"/>',
   ];
   $unread = $adm ? 0 : $u->notices()->where('is_read', false)->count();
-  $nav = $adm
-    ? [['/admin','Dashboard','home'],['/admin/facilities','Facilities','building'],['/admin/equipment','Equipment','box'],['/admin/requests','Requests & Borrowing','list'],['/admin/reports','Reports','chart'],['/admin/users','Users','users'],['/admin/profile','Profile & Settings','user']]
-    : [['/dashboard','Dashboard','home'],['/facilities','Facilities','building'],['/equipment','Equipment','box'],['/requests','My Requests','list'],['/transactions','History','swap'],['/notifications','Inbox','mail'],['/profile','Profile','user']];
+  $nav = $u->role === 'superadmin'
+    ? [['/superadmin','Dashboard','home'],['/superadmin/users','User Management','users'],['/superadmin/logs','System Logs','list'],['/superadmin/monitoring','Monitoring','chart'],['/superadmin/settings','Settings','user']]
+    : ($adm
+      ? [['/admin','Dashboard','home'],['/admin/facilities','Facilities','building'],['/admin/equipment','Equipment','box'],['/admin/requests','Requests & Borrowing','list'],['/admin/return-reminders','Return reminders','mail'],['/admin/reports','Reports','chart'],['/admin/users','Users','users'],['/admin/profile','Profile & Settings','user']]
+      : [['/dashboard','Dashboard','home'],['/facilities','Facilities','building'],['/equipment','Equipment','box'],['/requests','My Requests','list'],['/transactions','History','swap'],['/notifications','Inbox','mail'],['/profile','Profile','user']]);
   $initials = collect(explode(' ', $u->name))->map(fn($p)=>mb_substr($p,0,1))->take(2)->implode('');
 @endphp
 <aside>
   <div class="brand"><i>F</i><div><b>MCC FERMS</b><small>Facility Equipment Reservation Management System</small></div></div>
-  <div class="navlabel">{{ $adm ? 'ADMINISTRATION' : 'WORKSPACE' }}</div>
+  <div class="navlabel">{{ $u->role === 'superadmin' ? 'SYSTEM ADMINISTRATION' : ($adm ? 'ADMINISTRATION' : 'WORKSPACE') }}</div>
   @foreach($nav as [$url,$label,$icon])
     <a class="nav {{ '/'.request()->path()===$url ? 'on' : '' }}" href="{{ $url }}">
       <svg viewBox="0 0 24 24">{!! $ic[$icon] !!}</svg>{{ $label }}
@@ -36,7 +38,7 @@
     </a>
   @endforeach
   <div class="me">
-    <div class="who"><div class="av">{{ strtoupper($initials) }}</div><div><b>{{ $u->name }}</b><small>{{ $u->role==='admin' ? 'School Administrator' : ($u->role==='staff' ? 'Facility Staff' : ucfirst($u->role)) }}</small></div></div>
+    <div class="who"><div class="av">{{ strtoupper($initials) }}</div><div><b>{{ $u->name }}</b><small>{{ $u->role==='superadmin' ? 'Super Administrator' : ($u->role==='admin' ? 'School Administrator' : ($u->role==='staff' ? 'Facility Staff' : ucfirst($u->role))) }}</small></div></div>
     <form method="post" action="/logout">@csrf<button class="btn l s logout">Log out</button></form>
   </div>
 </aside>

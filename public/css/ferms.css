@@ -35,6 +35,8 @@ dialog.add-form form>[type="submit"]{margin-top:12px}
 /* cards */
 .card{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:20px;box-shadow:var(--sh);margin-bottom:18px}
 .grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));margin-bottom:18px}.grid .card{margin:0}
+.system-health-grid,.superadmin-actions{margin-bottom:0}
+.superadmin-stats,.superadmin-actions{grid-template-columns:repeat(auto-fit,minmax(min(100%,160px),1fr))}
 .dashboard-stats{width:100%;grid-template-columns:repeat(4,minmax(0,1fr))}
 .profile-sidebar{display:grid;align-content:start;gap:14px}
 .stat{display:flex;gap:14px;align-items:center;position:relative;overflow:hidden}
