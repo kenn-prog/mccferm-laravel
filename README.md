@@ -11,7 +11,7 @@ cp .env.example .env
 php artisan key:generate
 npm install && npm run build
 ```
-Edit `.env`: set the Supabase **session pooler** values (`DB_HOST`, `DB_USERNAME`, `DB_PASSWORD`) and, for Microsoft sign-in, `MICROSOFT_*` and `MCC_EMAIL_DOMAIN`. Never commit `.env`.
+Edit `.env`: set the Supabase **session pooler** values (`DB_HOST`, `DB_USERNAME`, `DB_PASSWORD`). To enable sign-in through the official Microsoft page, register an application in Microsoft Entra ID, add `http://localhost:8000/auth/microsoft/callback` as a Web redirect URI, and set `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET`, `MICROSOFT_TENANT_ID`, and `MCC_EMAIL_DOMAIN`. Configure the same callback URI for your deployed host. New MCC users are sent to registration only after Microsoft verifies their account. Never commit `.env`.
 
 ```bash
 php scripts/verify-connection.php    # optional: confirm Supabase connection

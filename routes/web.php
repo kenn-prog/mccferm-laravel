@@ -1,6 +1,10 @@
 <?php
 use Illuminate\Support\Facades\Route; use App\Http\Controllers\{AuthController,StudentController as S,AdminController as A,SuperAdminController as SA}; use App\Http\Middleware\RoleMiddleware as R;
-Route::get('/login',[AuthController::class,'show'])->name('login'); Route::get('/auth/microsoft',[AuthController::class,'redirect']); Route::get('/auth/microsoft/callback',[AuthController::class,'callback']);
+Route::get('/login',[AuthController::class,'show'])->name('login');
+Route::get('/auth/microsoft',[AuthController::class,'redirect']);
+Route::get('/auth/microsoft/callback',[AuthController::class,'callback']);
+Route::get('/register',[AuthController::class,'registerForm'])->middleware('web');
+Route::post('/register',[AuthController::class,'storeRegistration'])->middleware('web');
 Route::get('/dev-login/{role}',[AuthController::class,'dev']); Route::post('/logout',[AuthController::class,'logout'])->middleware('auth');
 Route::middleware('auth')->get('/',function(){
   $user = auth()->user();

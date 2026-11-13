@@ -2,7 +2,10 @@
 namespace Tests\Feature;
 use App\Models\{Equipment,EquipmentItem,Facility,FermsRequest,Notice,Reservation,Transaction,User};
 use Database\Seeders\DatabaseSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase; use Tests\TestCase;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Two\User as SocialiteUser;
+use Tests\TestCase;
 class FermsTest extends TestCase {
   use RefreshDatabase;
   private function u(string $role): User { return User::create(['name'=>ucfirst($role),'email'=>"$role@mcc.edu.ph",'role'=>$role,'is_active'=>true]); }
@@ -45,6 +48,80 @@ class FermsTest extends TestCase {
     $this->assertSame($equipmentCount,Equipment::count());
     $this->assertSame($availableProjectors,Equipment::where('name','Projector')->value('available_quantity'));
   }
+  public function test_microsoft_sign_in_redirects_to_microsoft_when_configured(): void {
+    config([
+      'services.microsoft.client_id'=>'test-client-id',
+      'services.microsoft.client_secret'=>'test-client-secret',
+    ]);
+
+    $provider=\Mockery::mock();
+    $provider->shouldReceive('redirect')->once()->andReturn(redirect('https://login.microsoftonline.com/'));
+    Socialite::shouldReceive('driver')->once()->with('microsoft')->andReturn($provider);
+
+    $this->get('/auth/microsoft')->assertRedirect('https://login.microsoftonline.com/');
+  }
+
+  public function test_microsoft_callback_sends_unregistered_account_to_registration(): void {
+    config([
+      'services.microsoft.client_id'=>'test-client-id',
+      'services.microsoft.client_secret'=>'test-client-secret',
+    ]);
+    $microsoftUser=\Mockery::mock(SocialiteUser::class);
+    $microsoftUser->shouldReceive('getEmail')->once()->andReturn('newuser@mcc.edu.ph');
+    $microsoftUser->shouldReceive('getName')->once()->andReturn('New User');
+    $provider=\Mockery::mock();
+    $provider->shouldReceive('user')->once()->andReturn($microsoftUser);
+    Socialite::shouldReceive('driver')->once()->with('microsoft')->andReturn($provider);
+
+    $response=$this->get('/auth/microsoft/callback');
+    $response->assertRedirect('/register');
+    $response->assertSessionHas('pending_microsoft_email', 'newuser@mcc.edu.ph');
+
+    $this->post('/register',[
+      'name'=>'New User',
+      'role'=>'admin',
+      'student_employee_id'=>'12345',
+      'phone'=>'09123456789',
+    ])->assertSessionHasErrors('role');
+    $this->assertDatabaseMissing('users',['email'=>'newuser@mcc.edu.ph']);
+
+    $response=$this->post('/register',[
+      'name'=>'New User',
+      'role'=>'student',
+      'organization_class'=>'BSIT 3A',
+      'phone'=>'09123456789',
+    ]);
+    $response->assertRedirect('/dashboard');
+    $this->assertDatabaseHas('users',['email'=>'newuser@mcc.edu.ph','role'=>'student']);
+    $this->assertAuthenticated();
+  }
+
+  public function test_microsoft_callback_logs_in_registered_account(): void {
+    config([
+      'services.microsoft.client_id'=>'test-client-id',
+      'services.microsoft.client_secret'=>'test-client-secret',
+    ]);
+    $student=$this->u('student');
+    $microsoftUser=\Mockery::mock(SocialiteUser::class);
+    $microsoftUser->shouldReceive('getEmail')->once()->andReturn('student@mcc.edu.ph');
+    $provider=\Mockery::mock();
+    $provider->shouldReceive('user')->once()->andReturn($microsoftUser);
+    Socialite::shouldReceive('driver')->once()->with('microsoft')->andReturn($provider);
+
+    $this->get('/auth/microsoft/callback')->assertRedirect('/dashboard');
+    $this->assertAuthenticatedAs($student);
+  }
+
+  public function test_unconfigured_microsoft_sign_in_fails_without_email_fallback(): void {
+    config([
+      'services.microsoft.client_id'=>null,
+      'services.microsoft.client_secret'=>null,
+    ]);
+
+    $this->get('/auth/microsoft')->assertRedirect('/login')->assertSessionHasErrors('microsoft');
+    $this->post('/auth/microsoft',['email'=>'newuser@mcc.edu.ph'])->assertStatus(405);
+  }
+
   public function test_guests_are_redirected_to_login(): void { $this->get('/admin')->assertRedirect('/login'); }
   public function test_student_cannot_open_admin_pages(): void { $this->actingAs($this->u('student'))->get('/admin')->assertForbidden(); }
   public function test_staff_cannot_open_student_pages(): void { $this->actingAs($this->u('staff'))->get('/dashboard')->assertForbidden(); }
