@@ -155,13 +155,6 @@
     .microsoft-mark i:nth-child(2) { background: #7fba00; }
     .microsoft-mark i:nth-child(3) { background: #00a4ef; }
     .microsoft-mark i:nth-child(4) { background: #ffb900; }
-    .login-note {
-      margin: 15px 0 0;
-      color: #7386a4;
-      font-size: 11.5px;
-      line-height: 1.6;
-      text-align: center;
-    }
     .login-divider {
       height: 1px;
       margin: 25px 0 20px;
@@ -276,7 +269,6 @@
         <span class="microsoft-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
         <span>Sign in with Microsoft</span>
       </a>
-      <p class="login-note">Use your MCC account. FERMS does not change your Microsoft password.</p>
 
       @if(app()->environment('local'))
         <div class="login-divider"></div>

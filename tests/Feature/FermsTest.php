@@ -558,8 +558,24 @@ class FermsTest extends TestCase {
       ->assertDontSee("document.getElementById('q')")
       ->assertSee('Upcoming Reservations')
       ->assertSee('Borrowed Equipment')
+      ->assertSee('Request overview')
+      ->assertSee('Your request activity will appear here once you submit your first request.')
       ->assertSee('<a class="link" href="/requests">View all →</a>',false);
     $this->assertSame(2,substr_count($response->getContent(),'<a class="link" href="/requests">View all →</a>'));
+  }
+  public function test_dashboard_request_overview_breaks_down_every_request_status(): void {
+    $student=$this->u('student');
+    foreach (['pending','approved','rejected','cancelled'] as $status) {
+      FermsRequest::create(['user_id'=>$student->id,'type'=>'facility','purpose'=>ucfirst($status),'status'=>$status]);
+    }
+
+    $response=$this->actingAs($student)->get('/dashboard')->assertOk();
+
+    $response->assertSee('Approved / complete')
+      ->assertSee('Rejected')
+      ->assertSee('Cancelled')
+      ->assertSee('aria-label="Pending share of requests" aria-valuemin="0" aria-valuemax="100" aria-valuenow="25"',false)
+      ->assertSee('style="width:25%"',false);
   }
   public function test_student_and_organization_can_choose_new_request_type_from_dashboard(): void {
     foreach (['student','organization'] as $role) {

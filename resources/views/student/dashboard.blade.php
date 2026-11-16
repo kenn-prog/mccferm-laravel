@@ -4,6 +4,13 @@
   $hr = now()->hour; $greet = $hr < 12 ? 'Good morning' : ($hr < 18 ? 'Good afternoon' : 'Good evening');
   $totalFac = \App\Models\Facility::count(); $pct = $totalFac ? round($facilities / $totalFac * 100) : 0;
   $first = explode(' ', trim(auth()->user()->name))[0];
+  $totalRequests = array_sum($counts);
+  $requestStatuses = [
+    ['Pending', $counts['pending'], 'pending'],
+    ['Approved / complete', $counts['approved'], 'approved'],
+    ['Rejected', $counts['rejected'], 'rejected'],
+    ['Cancelled', $counts['cancelled'], 'cancelled'],
+  ];
 @endphp
 <div class="page-header">
   <div class="page-header-content">
@@ -118,6 +125,34 @@
           <p>Nothing borrowed right now</p>
         </div>
       @endforelse
+    </div>
+
+    <div class="enhanced-card request-overview">
+      <div class="cardhead">
+        <div>
+          <h3>Request overview</h3>
+          <p class="request-overview-caption">Track the status of your requests.</p>
+        </div>
+        <a class="link" href="/transactions">View history →</a>
+      </div>
+      @if($totalRequests)
+        <div class="request-status-list">
+          @foreach($requestStatuses as [$label, $count, $status])
+            @php $share = round($count / $totalRequests * 100); @endphp
+            <div class="request-status-item">
+              <div class="request-status-heading">
+                <span class="request-status-name"><i class="request-status-dot {{ $status }}"></i>{{ $label }}</span>
+                <strong>{{ $count }}</strong>
+              </div>
+              <div class="request-status-track" role="progressbar" aria-label="{{ $label }} share of requests" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ $share }}">
+                <span class="request-status-fill {{ $status }}" style="width:{{ $share }}%"></span>
+              </div>
+            </div>
+          @endforeach
+        </div>
+      @else
+        <p class="request-overview-empty">Your request activity will appear here once you submit your first request.</p>
+      @endif
     </div>
   </div>
 

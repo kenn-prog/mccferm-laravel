@@ -14,7 +14,7 @@ class StudentController extends Controller {
     };
   }
   public function dashboard(Request $r) { $u=$r->user(); $q=$u->requests();
-    return view('student.dashboard',['counts'=>['pending'=>(clone $q)->where('status','pending')->count(),'approved'=>(clone $q)->whereIn('status',['approved','released','returned'])->count(),'rejected'=>(clone $q)->where('status','rejected')->count()],
+    return view('student.dashboard',['counts'=>['pending'=>(clone $q)->where('status','pending')->count(),'approved'=>(clone $q)->whereIn('status',['approved','released','returned'])->count(),'rejected'=>(clone $q)->where('status','rejected')->count(),'cancelled'=>(clone $q)->where('status','cancelled')->count()],
       'upcoming'=>Reservation::with('facility')->where('status','approved')->where('starts_at','>=',now())->whereHas('request',fn($x)=>$x->where('user_id',$u->id))->orderBy('starts_at')->limit(5)->get(),
       'borrowed'=>Transaction::with('equipment')->where('user_id',$u->id)->where('status','borrowed')->get(),'facilities'=>Facility::where('status','available')->count(),'equipment'=>Equipment::sum('available_quantity')]); }
   public function facilities() { return view('student.facilities',['facilities'=>Facility::orderBy('name')->get(),'booked'=>Reservation::with('facility')->where('status','approved')->where('ends_at','>=',now())->orderBy('starts_at')->get()]); }
