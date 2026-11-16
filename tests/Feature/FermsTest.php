@@ -555,18 +555,23 @@ class FermsTest extends TestCase {
     $response=$this->actingAs($student)->get('/dashboard')->assertOk();
 
     $response->assertDontSee('Search this page...')
-      ->assertDontSee("document.getElementById('q')");
-    $response->assertSee('Upcoming Reservations</h3><a class="link" href="/requests">See all',false);
-    $response->assertSee('Borrowed Equipment</h3><a class="link" href="/requests">See all',false);
+      ->assertDontSee("document.getElementById('q')")
+      ->assertSee('Upcoming Reservations')
+      ->assertSee('Borrowed Equipment')
+      ->assertSee('<a class="link" href="/requests">View all →</a>',false);
+    $this->assertSame(2,substr_count($response->getContent(),'<a class="link" href="/requests">View all →</a>'));
   }
   public function test_student_and_organization_can_choose_new_request_type_from_dashboard(): void {
     foreach (['student','organization'] as $role) {
       $response=$this->actingAs($this->u($role))->get('/dashboard')->assertOk();
 
       $response->assertSee('<details class="request-dropdown">',false)
-        ->assertSee('<summary class="btn">+ New request</summary>',false)
-        ->assertSee('href="/facilities">Facilities',false)
-        ->assertSee('href="/equipment">Equipment',false)
+        ->assertSee('<summary class="btn btn-icon">',false)
+        ->assertSee('New request')
+        ->assertSee('href="/facilities"',false)
+        ->assertSee('Facilities')
+        ->assertSee('href="/equipment"',false)
+        ->assertSee('Equipment')
         ->assertDontSee('<dialog class="card add-form" id="new-request-dialog">',false);
     }
   }
