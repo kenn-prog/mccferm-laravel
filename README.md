@@ -58,7 +58,9 @@ Replace the example host with the exact URL shown in the **Ports** tab. Add the 
 
 ## Deploy to Render
 
-The repository includes a production Docker image and Render Blueprint. In Render, create a **Blueprint** from this repository and review the service and its paid instance plan before confirming deployment. The service builds Laravel assets and PHP dependencies into the image and serves Laravel's `public` directory over port `10000`. Render checks `/up` for health.
+The repository includes a production Docker image and Render Blueprint configured for Render's free web service plan. In Render, create a **Blueprint** from this repository and verify the service remains on the free plan before confirming deployment. The service builds Laravel assets and PHP dependencies into the image and serves Laravel's `public` directory over port `10000`. Render checks `/up` for health.
+
+The free plan has limited compute and may spin the service down after inactivity, so the first request can be slow. It is suitable for trying out the deployment, not a guarantee of production uptime or performance. Supabase has its own separate plan limits.
 
 Before deploying, configure the Blueprint's `sync: false` variables in Render:
 
