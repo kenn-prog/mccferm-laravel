@@ -68,6 +68,7 @@ Before deploying, configure the Blueprint's `sync: false` variables in Render:
 - `APP_URL`: the full HTTPS Render URL or your custom domain.
 - `DB_HOST`, `DB_USERNAME`, and `DB_PASSWORD`: use the Supabase **session pooler** connection values from the Supabase dashboard. Keep `DB_PORT=5432`, `DB_DATABASE=postgres`, and `DB_SSLMODE=require`; verify the values match your Supabase connection settings.
 - `MICROSOFT_CLIENT_ID` and `MICROSOFT_CLIENT_SECRET`: the Entra application credentials.
+- `MICROSOFT_TENANT_ID`: the MCC Entra **Directory (tenant) ID**. Use the tenant GUID for a single-tenant app; `common` only works when the app is configured to support multiple tenants.
 - `MICROSOFT_REDIRECT_URI`: exactly `https://<your-render-host>/auth/microsoft/callback`.
 
 Add that exact HTTPS callback URL as a **Web** redirect URI in Microsoft Entra ID. If using a custom domain, use it consistently for `APP_URL`, the Microsoft redirect URI, and Entra's registration. The Blueprint defaults to Render's Singapore region; choose a Render region close to the Supabase database region to reduce database latency.

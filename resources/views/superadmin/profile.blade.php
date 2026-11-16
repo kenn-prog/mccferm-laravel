@@ -3,7 +3,7 @@
 <div class="head">
   <div>
     <h1>Profile</h1>
-    <p class="sub">Manage your IT Administrator account information and password.</p>
+    <p class="sub">Manage your IT Administrator account information.</p>
   </div>
 </div>
 
@@ -24,26 +24,4 @@
   </form>
 </div>
 
-<div class="card">
-  <div class="cardhead"><h3>Password &amp; Security</h3></div>
-  <p class="sub">Change your password to keep your account secure.</p>
-  <form method="post" action="/superadmin/profile/password">
-    @csrf
-    <div class="row">
-      <div>
-        <label for="current_password">Current Password</label>
-        <input id="current_password" type="password" name="current_password" required autocomplete="current-password">
-      </div>
-      <div>
-        <label for="password">New Password</label>
-        <input id="password" type="password" name="password" required minlength="8" autocomplete="new-password">
-      </div>
-      <div>
-        <label for="password_confirmation">Confirm New Password</label>
-        <input id="password_confirmation" type="password" name="password_confirmation" required autocomplete="new-password">
-      </div>
-    </div>
-    <button class="btn" type="submit">Update Password</button>
-  </form>
-</div>
 @endsection

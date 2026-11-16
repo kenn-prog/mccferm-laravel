@@ -53,6 +53,6 @@ services:
       - key: MICROSOFT_CLIENT_SECRET
         sync: false
       - key: MICROSOFT_TENANT_ID
-        value: common
+        sync: false
       - key: MICROSOFT_REDIRECT_URI
         sync: false

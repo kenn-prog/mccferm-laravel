@@ -84,34 +84,6 @@
     </div>
 </div>
 
-<!-- Password & Security -->
-<div class="card">
-    <h3>Password & Security</h3>
-    <p class="sub" style="margin-bottom: 20px;">Change your password to keep your account secure.</p>
-    
-    <form method="post" action="/admin/profile/password">
-        @csrf
-        <div class="row">
-            <div>
-                <label>Current Password</label>
-                <input type="password" name="current_password" required>
-            </div>
-            <div>
-                <label>New Password</label>
-                <input type="password" name="password" required minlength="8">
-                <small style="color: var(--text-muted); font-size: 13px; display: block; margin-top: 4px;">
-                    Minimum 8 characters
-                </small>
-            </div>
-            <div>
-                <label>Confirm New Password</label>
-                <input type="password" name="password_confirmation" required>
-            </div>
-        </div>
-        <button class="btn" style="margin-top: 8px;">Update Password</button>
-    </form>
-</div>
-
 <!-- System Preferences (Admin Only) -->
 @if(auth()->user()->role === 'admin')
 <div class="card">

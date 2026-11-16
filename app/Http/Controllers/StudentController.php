@@ -1,7 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 use App\Models\{Facility,Equipment,FermsRequest,Reservation,EquipmentItem,Transaction,User,Notice};
-use Closure; use Illuminate\Http\Request; use Illuminate\Support\Carbon; use Illuminate\Support\Facades\DB; use Illuminate\Support\Facades\Hash;
+use Closure; use Illuminate\Http\Request; use Illuminate\Support\Carbon; use Illuminate\Support\Facades\DB;
 class StudentController extends Controller {
   private function businessHoursRule(): Closure {
     return function($attribute,$value,$fail) {
@@ -93,12 +93,4 @@ class StudentController extends Controller {
   public function notifications(Request $r) { $n=$r->user()->notices()->latest()->get(); $r->user()->notices()->update(['is_read'=>true]); return view('student.notifications',['rows'=>$n]); }
   public function profile(Request $r) { $u=$r->user(); return view('student.profile',['requestCount'=>$u->requests()->count(),'borrowedCount'=>Transaction::where('user_id',$u->id)->where('status','borrowed')->sum('quantity')]); }
   public function updateProfile(Request $r) { $d=$r->validate(['name'=>'required|string|max:255','organization_class'=>'nullable|string|max:100','phone'=>'required|string|max:20']); $r->user()->update($d); return back()->with('ok','Profile updated.'); }
-  public function updatePassword(Request $r) {
-    $r->validate(['current_password'=>'required','password'=>'required|min:8|confirmed']);
-    if (!Hash::check($r->current_password, $r->user()->password ?? '')) {
-      return back()->withErrors(['current_password'=>'Current password is incorrect.']);
-    }
-    $r->user()->update(['password'=>Hash::make($r->password)]);
-    return back()->with('ok','Password updated successfully.');
-  }
 }

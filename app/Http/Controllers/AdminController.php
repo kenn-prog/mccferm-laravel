@@ -60,15 +60,6 @@ class AdminController extends Controller {
     return back()->with('ok','Profile updated successfully.');
   }
   
-  public function updatePassword(Request $r) {
-    $r->validate(['current_password'=>'required','password'=>'required|min:8|confirmed']);
-    if(!password_verify($r->current_password, $r->user()->password)) {
-      return back()->withErrors(['current_password'=>'Current password is incorrect.']);
-    }
-    $r->user()->update(['password'=>bcrypt($r->password)]);
-    return back()->with('ok','Password updated successfully.');
-  }
-  
   public function updateSettings(Request $r) {
     abort_unless($r->user()->role==='admin',403);
     $d = $r->validate(['email_notifications'=>'boolean','auto_approve_reservations'=>'boolean','default_duration'=>'nullable|integer','max_borrow_days'=>'nullable|integer|min:1|max:30']);
