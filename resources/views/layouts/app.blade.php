@@ -22,7 +22,7 @@
   ];
   $unread = $adm ? 0 : $u->notices()->where('is_read', false)->count();
   $nav = $u->role === 'superadmin'
-    ? [['/superadmin','Dashboard','home'],['/superadmin/users','User Management','users'],['/superadmin/logs','System Logs','list'],['/superadmin/monitoring','Monitoring','chart'],['/superadmin/settings','Settings','user']]
+    ? [['/superadmin','Dashboard','home'],['/superadmin/users','User Management','users'],['/superadmin/logs','System Logs','list'],['/superadmin/monitoring','Monitoring','chart'],['/superadmin/settings','Settings','user'],['/superadmin/profile','Profile','user']]
     : ($adm
       ? [['/admin','Dashboard','home'],['/admin/facilities','Facilities','building'],['/admin/equipment','Equipment','box'],['/admin/requests','Requests & Borrowing','list'],['/admin/return-reminders','Return reminders','mail'],['/admin/reports','Reports','chart'],['/admin/users','Users','users'],['/admin/profile','Profile & Settings','user']]
       : [['/dashboard','Dashboard','home'],['/facilities','Facilities','building'],['/equipment','Equipment','box'],['/requests','My Requests','list'],['/transactions','History','swap'],['/notifications','Inbox','mail'],['/profile','Profile','user']]);
@@ -30,7 +30,7 @@
 @endphp
 <aside>
   <div class="brand"><i>F</i><div><b>MCC FERMS</b><small>Facility Equipment Reservation Management System</small></div></div>
-  <div class="navlabel">{{ $u->role === 'superadmin' ? 'SYSTEM ADMINISTRATION' : ($adm ? 'ADMINISTRATION' : 'WORKSPACE') }}</div>
+  <div class="navlabel">{{ $u->role === 'superadmin' ? 'IT ADMINISTRATION' : ($adm ? 'ADMINISTRATION' : 'WORKSPACE') }}</div>
   @foreach($nav as [$url,$label,$icon])
     <a class="nav {{ '/'.request()->path()===$url ? 'on' : '' }}" href="{{ $url }}">
       <svg viewBox="0 0 24 24">{!! $ic[$icon] !!}</svg>{{ $label }}
@@ -38,7 +38,7 @@
     </a>
   @endforeach
   <div class="me">
-    <div class="who"><div class="av">{{ strtoupper($initials) }}</div><div><b>{{ $u->name }}</b><small>{{ $u->role==='superadmin' ? 'Super Administrator' : ($u->role==='admin' ? 'School Administrator' : ($u->role==='staff' ? 'Facility Staff' : ucfirst($u->role))) }}</small></div></div>
+    <div class="who"><div class="av">{{ strtoupper($initials) }}</div><div><b>{{ $u->name }}</b><small>{{ $u->role==='superadmin' ? 'IT Administrator' : ($u->role==='admin' ? 'School Administrator' : ($u->role==='staff' ? 'Facility Staff' : ucfirst($u->role))) }}</small></div></div>
     <form method="post" action="/logout">@csrf<button class="btn l s logout">Log out</button></form>
   </div>
 </aside>

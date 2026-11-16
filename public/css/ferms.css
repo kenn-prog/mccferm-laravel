@@ -215,7 +215,7 @@ label{font-size:12.5px;font-weight:700;color:#3f5a86}textarea{min-height:76px;re
 .page-header h1{margin-bottom:4px;font-size:28px;line-height:1.1}
 .page-header .sub{margin:0}
 .page-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.stat-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-bottom:16px}
+.stat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}
 .stat-card-compact{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;box-shadow:var(--sh);display:flex;align-items:center;gap:12px;transition:.2s}
 .stat-card-compact:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(23,105,224,.12)}
 .stat-card-compact .icon{width:42px;height:42px;border-radius:11px;background:linear-gradient(135deg,var(--sky),#d3e5ff);color:var(--blue);display:grid;place-items:center;flex:none}
@@ -266,7 +266,7 @@ label{font-size:12.5px;font-weight:700;color:#3f5a86}textarea{min-height:76px;re
 .btn-icon svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .action-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:16px;background:var(--sky2);border-radius:12px;margin-bottom:16px}
 .action-bar .action-bar-label{font-size:13px;font-weight:700;color:var(--navy);flex:1}
-@media(max-width:1200px){.stat-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:1200px){.stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:768px){.stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.content-grid,.facility-grid,.equipment-grid{grid-template-columns:1fr}.page-header{flex-direction:column;align-items:flex-start}.page-actions{width:100%}.page-actions .btn{flex:1}}
 @media(max-width:520px){.stat-grid{grid-template-columns:1fr}}
 /* Final Polish & Animations */

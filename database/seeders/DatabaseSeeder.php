@@ -14,7 +14,7 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Student Council', 'email' => 'organization@mcc.edu.ph', 'role' => 'organization', 'organization_class' => 'Student Council'],
             ['name' => 'Maria Dela Pena', 'email' => 'staff@mcc.edu.ph', 'role' => 'staff'],
             ['name' => 'Ariel Amoguis', 'email' => 'admin@mcc.edu.ph', 'role' => 'admin'],
-            ['name' => 'Super Administrator', 'email' => 'superadmin@mcc.edu.ph', 'role' => 'superadmin'],
+            ['name' => 'IT Administrator', 'email' => 'superadmin@mcc.edu.ph', 'role' => 'superadmin'],
         ];
 
         foreach ($users as $user) {

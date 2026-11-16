@@ -46,7 +46,7 @@
   <div class="cardhead"><h3>Maintenance Mode</h3></div>
   <div class="row">
     <div style="flex:1">
-      <p>Enable maintenance mode to restrict access to the system for all users except superadmins.</p>
+      <p>Enable maintenance mode to restrict access to the system for all users except IT administrators.</p>
       <small style="color:var(--muted)">Users will see a maintenance page when trying to access the system.</small>
     </div>
     <form method="post" action="/superadmin/maintenance-toggle">

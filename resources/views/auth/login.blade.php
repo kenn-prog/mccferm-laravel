@@ -9,7 +9,7 @@
     <a class="btn" style="display:block;text-align:center" href="/auth/microsoft">Sign in with MCC Microsoft account</a>
     @if(app()->environment('local'))
       <div style="margin-top:22px;font-size:12px;font-weight:700;color:var(--mute);letter-spacing:.08em">DEVELOPMENT LOGIN</div>
-      <div class="dev">@foreach(['student','organization','staff','admin','superadmin'] as $r)<a class="btn s l" style="text-align:center" href="/dev-login/{{ $r }}">{{ $r==='superadmin' ? 'Super Admin' : ucfirst($r) }}</a>@endforeach</div>
+      <div class="dev">@foreach(['student','organization','staff','admin','superadmin'] as $r)<a class="btn s l" style="text-align:center" href="/dev-login/{{ $r }}">{{ $r==='superadmin' ? 'IT Administrator' : ucfirst($r) }}</a>@endforeach</div>
     @endif
   </div>
 </div>

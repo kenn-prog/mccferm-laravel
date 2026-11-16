@@ -2,7 +2,7 @@
 namespace App\Http\Controllers;
 use App\Models\{User,Facility,Equipment,FermsRequest,Reservation,Transaction,Notice};
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\{DB,Cache,Artisan,Log};
+use Illuminate\Support\Facades\{DB,Cache,Artisan,Hash,Log};
 
 class SuperAdminController extends Controller {
     
@@ -193,6 +193,32 @@ class SuperAdminController extends Controller {
         ];
 
         return view('superadmin.monitoring', compact('metrics', 'performance'));
+    }
+
+    public function profile() {
+        return view('superadmin.profile');
+    }
+
+    public function updateProfile(Request $r) {
+        $validated = $r->validate(['name' => 'required|string|max:255']);
+        $r->user()->update($validated);
+
+        return back()->with('ok', 'Profile updated successfully.');
+    }
+
+    public function updatePassword(Request $r) {
+        $validated = $r->validate([
+            'current_password' => 'required',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        if (!Hash::check($validated['current_password'], $r->user()->password ?? '')) {
+            return back()->withErrors(['current_password' => 'Current password is incorrect.']);
+        }
+
+        $r->user()->update(['password' => Hash::make($validated['password'])]);
+
+        return back()->with('ok', 'Password updated successfully.');
     }
 
     public function clearCache() {

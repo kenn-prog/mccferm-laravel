@@ -9,7 +9,7 @@
 
 <!-- Role Statistics -->
 <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr));margin-bottom:1.5rem">
-  @foreach(['superadmin'=>'Super Admins','admin'=>'Admins','staff'=>'Staff','organization'=>'Organizations','student'=>'Students'] as $role => $label)
+  @foreach(['superadmin'=>'IT Administrators','admin'=>'Admins','staff'=>'Staff','organization'=>'Organizations','student'=>'Students'] as $role => $label)
     <div class="card stat">
       <b>{{ $roleStats[$role] ?? 0 }}</b>
       <span>{{ $label }}</span>
@@ -43,7 +43,7 @@
                 <option value="organization" {{ $user->role==='organization' ? 'selected' : '' }}>Organization</option>
                 <option value="staff" {{ $user->role==='staff' ? 'selected' : '' }}>Staff</option>
                 <option value="admin" {{ $user->role==='admin' ? 'selected' : '' }}>Admin</option>
-                <option value="superadmin" {{ $user->role==='superadmin' ? 'selected' : '' }}>Super Admin</option>
+                <option value="superadmin" {{ $user->role==='superadmin' ? 'selected' : '' }}>IT Administrator</option>
               </select>
             </form>
           </td>

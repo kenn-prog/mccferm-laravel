@@ -3,6 +3,6 @@
   "build": { "dockerfile": "Dockerfile" },
   "remoteUser": "vscode",
   "forwardPorts": [8000],
-  "portsAttributes": { "8000": { "label": "MCC-FERMS", "onAutoForward": "notify" } },
+  "portsAttributes": { "8000": { "label": "MCC-FERMS", "onAutoForward": "openBrowser" } },
   "postCreateCommand": "bash scripts/setup.sh"
 }

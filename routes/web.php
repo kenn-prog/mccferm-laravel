@@ -29,6 +29,7 @@ Route::prefix('admin')->middleware(['auth',R::class.':staff,admin'])->group(func
 });
 Route::prefix('superadmin')->middleware(['auth',R::class.':superadmin'])->group(function(){
   Route::get('/',[SA::class,'dashboard']); Route::get('/settings',[SA::class,'systemSettings']); Route::post('/settings',[SA::class,'updateSystemSettings']);
+  Route::get('/profile',[SA::class,'profile']); Route::post('/profile',[SA::class,'updateProfile']); Route::post('/profile/password',[SA::class,'updatePassword']);
   Route::get('/logs',[SA::class,'systemLogs']); Route::post('/logs/clear',[SA::class,'clearLogs']);
   Route::get('/users',[SA::class,'userManagement']); Route::post('/users/{user}/toggle',[SA::class,'toggleUserStatus']); Route::post('/users/{user}/role',[SA::class,'changeUserRole']);
   Route::get('/monitoring',[SA::class,'systemMonitoring']); Route::post('/clear-cache',[SA::class,'clearCache']); Route::post('/optimize',[SA::class,'optimizeDatabase']);

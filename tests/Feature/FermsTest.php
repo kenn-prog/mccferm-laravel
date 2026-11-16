@@ -3,6 +3,7 @@ namespace Tests\Feature;
 use App\Models\{Equipment,EquipmentItem,Facility,FermsRequest,Notice,Reservation,Transaction,User};
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\User as SocialiteUser;
 use Tests\TestCase;
@@ -17,6 +18,7 @@ class FermsTest extends TestCase {
       ['admin','organization','staff','student','superadmin'],
       User::whereIn('role',['student','organization','staff','admin','superadmin'])->orderBy('role')->pluck('role')->all(),
     );
+    $this->assertSame('IT Administrator',User::where('email','superadmin@mcc.edu.ph')->value('name'));
     $this->assertGreaterThanOrEqual(12,Facility::count());
     $this->assertGreaterThanOrEqual(15,Equipment::count());
     foreach (['student@mcc.edu.ph','organization@mcc.edu.ph'] as $email) {
@@ -175,6 +177,41 @@ class FermsTest extends TestCase {
         ->assertSessionHasNoErrors();
       $this->assertSame('+639123456789',$user->fresh()->phone);
     }
+  }
+  public function test_it_administrator_can_manage_their_profile_and_password(): void {
+    $administrator=User::create([
+      'name'=>'IT Administrator',
+      'email'=>'it-administrator@test.mcc.edu.ph',
+      'role'=>'superadmin',
+      'is_active'=>true,
+      'password'=>Hash::make('old-password'),
+    ]);
+
+    $this->actingAs($administrator)->get('/superadmin/profile')->assertOk()
+      ->assertSee('IT Administrator')
+      ->assertSee('Profile')
+      ->assertSee('/superadmin/profile/password');
+
+    $this->post('/superadmin/profile',['name'=>'IT Operations'])
+      ->assertRedirect('/superadmin/profile')
+      ->assertSessionHasNoErrors();
+    $this->assertSame('IT Operations',$administrator->fresh()->name);
+
+    $this->post('/superadmin/profile/password',[
+      'current_password'=>'wrong-password',
+      'password'=>'new-password',
+      'password_confirmation'=>'new-password',
+    ])->assertSessionHasErrors('current_password');
+
+    $this->post('/superadmin/profile/password',[
+      'current_password'=>'old-password',
+      'password'=>'new-password',
+      'password_confirmation'=>'new-password',
+    ])->assertRedirect('/superadmin/profile')
+      ->assertSessionHasNoErrors();
+    $this->assertTrue(Hash::check('new-password',$administrator->fresh()->password));
+
+    $this->actingAs($this->u('student'))->get('/superadmin/profile')->assertForbidden();
   }
   public function test_validation_errors_are_shown_in_a_dismissible_popup(): void {
     $student=$this->u('student');
