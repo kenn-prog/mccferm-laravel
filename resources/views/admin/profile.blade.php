@@ -30,8 +30,11 @@
             <label>Department / Office</label>
             <input name="organization_class" value="{{ old('organization_class', auth()->user()->organization_class) }}" placeholder="e.g., ICT Office, Registrar, Admin Office">
             
+            <label>Employee ID</label>
+            <input type="text" name="student_employee_id" value="{{ old('student_employee_id', auth()->user()->student_employee_id ?? '') }}" placeholder="1234-5678" pattern="[0-9]{4}-[0-9]{4}" minlength="9" maxlength="9" title="Enter your ID in the format 1234-5678" required>
+
             <label>Phone Number</label>
-            <input type="tel" name="phone" value="{{ old('phone', auth()->user()->phone ?? '') }}" placeholder="09XX XXX XXXX" required>
+            <input type="tel" name="phone" value="{{ old('phone', auth()->user()->phone ?? '') }}" placeholder="09XXXXXXXXX" pattern="09[0-9]{9}" minlength="11" maxlength="11" inputmode="numeric" autocomplete="tel" title="Enter 11 digits starting with 09" required>
             
             <button class="btn" style="margin-top: 8px;">Save Changes</button>
         </form>

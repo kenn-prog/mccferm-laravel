@@ -1,7 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 use App\Models\{Facility,Equipment,FermsRequest,Reservation,Transaction,User,Notice};
-use Illuminate\Http\Request; use Illuminate\Database\QueryException; use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request; use Illuminate\Database\QueryException; use Illuminate\Support\Facades\DB; use Illuminate\Validation\Rule;
 class AdminController extends Controller {
   private function notify($uid,$title,$msg,$type='info'){ Notice::create(['user_id'=>$uid,'title'=>$title,'message'=>$msg,'type'=>$type]); }
   public function dashboard() { return view('admin.dashboard',['s'=>['Total reservations'=>Reservation::count(),'Pending requests'=>FermsRequest::where('status','pending')->count(),'Approved reservations'=>Reservation::where('status','approved')->count(),'Available facilities'=>Facility::where('status','available')->count(),'Total equipment'=>Equipment::sum('total_quantity'),'Currently borrowed'=>Transaction::where('status','borrowed')->sum('quantity')],
@@ -55,7 +55,7 @@ class AdminController extends Controller {
    public function profile() { return view('admin.profile'); }
   
   public function updateProfile(Request $r) {
-    $d = $r->validate(['name'=>'required|string|max:255','organization_class'=>'nullable|string|max:100','phone'=>'required|string|max:20']);
+    $d = $r->validate(['name'=>'required|string|max:255','organization_class'=>'nullable|string|max:100','student_employee_id'=>['required','string','regex:/\A[0-9]{4}-[0-9]{4}\z/',Rule::unique('users','student_employee_id')->ignore($r->user()->id)],'phone'=>['required','string','regex:/\A09[0-9]{9}\z/']],['phone.regex'=>'Enter an 11-digit phone number starting with 09.','student_employee_id.regex'=>'Enter your employee ID in the format 1234-5678.','student_employee_id.unique'=>'This student or employee ID is already registered.']);
     $r->user()->update($d);
     return back()->with('ok','Profile updated successfully.');
   }

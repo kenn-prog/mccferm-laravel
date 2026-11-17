@@ -46,14 +46,14 @@ class AuthController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'role' => ['required', 'in:student,organization'],
-            'organization_class' => ['nullable', 'string', 'max:100'],
-            'student_employee_id' => ['nullable', 'string', 'max:50'],
-            'phone' => ['required', 'string', 'max:20'],
+            'organization_class' => ['required', 'string', 'max:100'],
+            'student_employee_id' => ['required', 'string', 'regex:/\A[0-9]{4}-[0-9]{4}\z/', 'unique:users,student_employee_id'],
+            'phone' => ['required', 'string', 'regex:/\A09[0-9]{9}\z/'],
+        ], [
+            'phone.regex' => 'Enter an 11-digit phone number starting with 09.',
+            'student_employee_id.regex' => 'Enter your school ID in the format 1234-5678.',
+            'student_employee_id.unique' => 'This student or employee ID is already registered.',
         ]);
-
-        if (in_array($data['role'], ['student', 'organization'], true) && empty($data['organization_class'])) {
-            $request->validate(['organization_class' => 'required|string|max:100'], ['organization_class.required' => 'Class or organization name is required for this role.']);
-        }
 
         $email = strtolower($email);
         if (User::where('email', $email)->exists()) {

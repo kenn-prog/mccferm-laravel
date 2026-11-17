@@ -9,7 +9,7 @@ use Laravel\Socialite\Two\User as SocialiteUser;
 use Tests\TestCase;
 class FermsTest extends TestCase {
   use RefreshDatabase;
-  private function u(string $role): User { return User::create(['name'=>ucfirst($role),'email'=>"$role@mcc.edu.ph",'role'=>$role,'is_active'=>true]); }
+  private function u(string $role): User { $id=User::count()+1; return User::create(['name'=>ucfirst($role),'email'=>"$role@mcc.edu.ph",'role'=>$role,'is_active'=>true,'student_employee_id'=>sprintf('%04d-%04d',$id,$id),'phone'=>'09123456789']); }
   public function test_database_seeder_restores_demo_users_and_catalogue_idempotently(): void {
     $seeder=new DatabaseSeeder();
     $seeder->run();
@@ -23,6 +23,10 @@ class FermsTest extends TestCase {
     $this->assertGreaterThanOrEqual(15,Equipment::count());
     foreach (['student@mcc.edu.ph','organization@mcc.edu.ph'] as $email) {
       $user=User::where('email',$email)->firstOrFail();
+      $user->update([
+        'student_employee_id'=>$email==='student@mcc.edu.ph'?'2345-6789':'3456-7890',
+        'phone'=>'09123456789',
+      ]);
       $this->assertSame(
         ['danger','info','success','warning'],
         Notice::where('user_id',$user->id)->orderBy('type')->distinct()->pluck('type')->all(),
@@ -91,11 +95,52 @@ class FermsTest extends TestCase {
       'name'=>'New User',
       'role'=>'student',
       'organization_class'=>'BSIT 3A',
+      'student_employee_id'=>'1234-5678',
       'phone'=>'09123456789',
     ]);
     $response->assertRedirect('/dashboard');
-    $this->assertDatabaseHas('users',['email'=>'newuser@mcc.edu.ph','role'=>'student']);
+    $this->assertDatabaseHas('users',[
+      'email'=>'newuser@mcc.edu.ph',
+      'role'=>'student',
+      'student_employee_id'=>'1234-5678',
+      'phone'=>'09123456789',
+    ]);
     $this->assertAuthenticated();
+    $this->get('/profile')->assertOk()
+      ->assertSee('name="phone" value="09123456789"',false);
+  }
+
+  public function test_registration_requires_student_id_and_a_valid_phone_number(): void {
+    $this->withSession(['pending_microsoft_email'=>'newstudent@mcc.edu.ph'])
+      ->get('/register')->assertOk()
+      ->assertSee('placeholder="Your full name" required',false)
+      ->assertSee('name="role" required',false)
+      ->assertSee('name="phone"',false)
+      ->assertSee('pattern="09[0-9]{9}"',false)
+      ->assertSee('placeholder="BSIT 3A or Student Council" required',false)
+      ->assertSee('name="student_employee_id"',false)
+      ->assertSee('placeholder="1234-5678"',false)
+      ->assertSee('pattern="[0-9]{4}-[0-9]{4}"',false);
+
+    $this->withSession(['pending_microsoft_email'=>'newstudent@mcc.edu.ph'])
+      ->post('/register',[
+        'name'=>'',
+        'role'=>'',
+        'organization_class'=>'',
+        'student_employee_id'=>'',
+        'phone'=>'0',
+      ])->assertSessionHasErrors(['name','role','organization_class','student_employee_id','phone']);
+
+    $this->withSession(['pending_microsoft_email'=>'newstudent@mcc.edu.ph'])
+      ->post('/register',[
+        'name'=>'New Student',
+        'role'=>'student',
+        'organization_class'=>'BSIT 3A',
+        'student_employee_id'=>'12345678',
+        'phone'=>'09123456789',
+      ])->assertSessionHasErrors('student_employee_id');
+
+    $this->assertDatabaseMissing('users',['email'=>'newstudent@mcc.edu.ph']);
   }
 
   public function test_microsoft_callback_logs_in_registered_account(): void {
@@ -166,16 +211,65 @@ class FermsTest extends TestCase {
   public function test_phone_number_is_required_for_student_and_admin_profiles(): void {
     foreach (['student'=>'/profile','staff'=>'/admin/profile'] as $role=>$path) {
       $user=$this->u($role);
+      $user->update(['student_employee_id'=>null,'phone'=>null]);
       $this->actingAs($user)->get($path)->assertOk()
         ->assertSee('Phone Number')
         ->assertSee('name="phone"',false)
-        ->assertSee('name="phone" value="" placeholder="09XX XXX XXXX" required',false);
+        ->assertSee('name="student_employee_id"',false)
+        ->assertSee('name="phone" value="" placeholder="09XXXXXXXXX"',false)
+        ->assertSee('pattern="09[0-9]{9}"',false)
+        ->assertSee('pattern="[0-9]{4}-[0-9]{4}"',false)
+        ->assertSee('id="error-dialog"',false)
+        ->assertSee('missing or invalid',false)
+        ->assertSee('required',false);
 
-      $this->post($path,['name'=>$user->name,'phone'=>''])->assertSessionHasErrors('phone');
-      $this->post($path,['name'=>$user->name,'phone'=>'+639123456789'])
+      foreach (['','0','0912345678','091234567890','+639123456789'] as $invalidPhone) {
+        $this->post($path,['name'=>$user->name,'student_employee_id'=>$role==='student'?'1234-5678':'8765-4321','phone'=>$invalidPhone])->assertSessionHasErrors('phone');
+      }
+      $this->assertNull($user->fresh()->phone);
+
+      $this->post($path,['name'=>$user->name,'student_employee_id'=>'12345678','phone'=>'09123456789'])
+        ->assertSessionHasErrors('student_employee_id');
+      $this->assertNull($user->fresh()->student_employee_id);
+
+      $studentEmployeeId=$role==='student'?'1234-5678':'8765-4321';
+      $this->post($path,['name'=>$user->name,'student_employee_id'=>$studentEmployeeId,'phone'=>'09123456789'])
         ->assertRedirect($path)
         ->assertSessionHasNoErrors();
-      $this->assertSame('+639123456789',$user->fresh()->phone);
+      $this->assertSame('09123456789',$user->fresh()->phone);
+      $this->assertSame($studentEmployeeId,$user->fresh()->student_employee_id);
+    }
+  }
+  public function test_accounts_with_incomplete_profiles_can_only_open_profile_until_fixed(): void {
+    $accounts=[
+      ['student','/profile','/dashboard','1000-0001'],
+      ['organization','/profile','/dashboard','1000-0002'],
+      ['staff','/admin/profile','/admin','1000-0003'],
+      ['admin','/admin/profile','/admin','1000-0004'],
+    ];
+
+    foreach ($accounts as [$role,$profilePath,$homePath,$studentEmployeeId]) {
+      $user=$this->u($role);
+      if (in_array($role,['staff','admin'],true)) {
+        $user->update(['student_employee_id'=>'12345678','phone'=>'0']);
+      } else {
+        $user->update(['student_employee_id'=>null,'phone'=>null]);
+      }
+
+      $this->actingAs($user)->get($homePath)->assertRedirect($profilePath);
+      $this->get($profilePath)->assertOk()
+        ->assertSee('id="error-dialog"',false)
+        ->assertSee('missing or invalid',false);
+
+      $this->post($profilePath,[
+        'name'=>$user->name,
+        'student_employee_id'=>$studentEmployeeId,
+        'phone'=>'09123456789',
+      ])->assertRedirect($profilePath)->assertSessionHasNoErrors();
+
+      $this->assertSame($studentEmployeeId,$user->fresh()->student_employee_id);
+      $this->assertSame('09123456789',$user->fresh()->phone);
+      $this->get($homePath)->assertOk();
     }
   }
   public function test_password_changes_are_unavailable_for_every_role(): void {

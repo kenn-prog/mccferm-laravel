@@ -45,17 +45,17 @@
         </div>
         <div class="field">
           <label for="phone">Phone number</label>
-          <input id="phone" type="tel" name="phone" value="{{ old('phone') }}" placeholder="09XX XXX XXXX" required>
+          <input id="phone" type="tel" name="phone" value="{{ old('phone') }}" placeholder="09XXXXXXXXX" pattern="09[0-9]{9}" minlength="11" maxlength="11" inputmode="numeric" autocomplete="tel" title="Enter 11 digits starting with 09" required>
         </div>
       </div>
       <div class="row">
         <div class="field">
           <label for="organization_class">Class / organization</label>
-          <input id="organization_class" type="text" name="organization_class" value="{{ old('organization_class') }}" placeholder="BSIT 3A or Student Council">
+          <input id="organization_class" type="text" name="organization_class" value="{{ old('organization_class') }}" placeholder="BSIT 3A or Student Council" required>
         </div>
         <div class="field">
           <label for="student_employee_id">Employee / student ID</label>
-          <input id="student_employee_id" type="text" name="student_employee_id" value="{{ old('student_employee_id') }}" placeholder="Optional for students">
+          <input id="student_employee_id" type="text" name="student_employee_id" value="{{ old('student_employee_id') }}" placeholder="1234-5678" pattern="[0-9]{4}-[0-9]{4}" minlength="9" maxlength="9" title="Enter your ID in the format 1234-5678" required>
         </div>
       </div>
       <button class="btn" type="submit" style="width:100%">Create account</button>

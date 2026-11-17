@@ -9,6 +9,15 @@
 <body>
 @php
   $u = auth()->user(); $adm = $u->isAdminSide();
+  $isProfilePage = request()->is('profile') || request()->is('admin/profile');
+  $profileCompletionErrors = [];
+  if ($isProfilePage && !preg_match('/\A[0-9]{4}-[0-9]{4}\z/', (string)$u->student_employee_id)) {
+    $idLabel = in_array($u->role, ['student', 'organization'], true) ? 'Student ID' : 'Employee ID';
+    $profileCompletionErrors[] = "Your {$idLabel} is missing or invalid. Enter it in the format 1234-5678 and save your profile.";
+  }
+  if ($isProfilePage && !preg_match('/\A09[0-9]{9}\z/', (string)$u->phone)) {
+    $profileCompletionErrors[] = 'Your phone number is missing or invalid. Enter 11 digits starting with 09 and save your profile.';
+  }
   $ic = [
     'home'=>'<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/>',
     'building'=>'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M10 21v-4h4v4"/>',
@@ -48,10 +57,11 @@
     @yield('content')
   </main>
 </div>
-@if($errors->any())
+@if($errors->any() || count($profileCompletionErrors))
   <dialog class="confirm-dialog error-dialog" id="error-dialog" aria-labelledby="error-dialog-title">
     <div class="add-form-header"><h3 id="error-dialog-title">Something went wrong</h3></div>
     <div class="error-dialog-messages">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>
+    <div class="error-dialog-messages">@foreach($profileCompletionErrors as $error)<p>{{ $error }}</p>@endforeach</div>
     <div class="row confirm-actions"><button class="btn" type="button" data-close-error>OK</button></div>
   </dialog>
 @endif

@@ -1,5 +1,5 @@
 <?php
-use Illuminate\Support\Facades\Route; use App\Http\Controllers\{AuthController,StudentController as S,AdminController as A,SuperAdminController as SA}; use App\Http\Middleware\RoleMiddleware as R;
+use Illuminate\Support\Facades\Route; use App\Http\Controllers\{AuthController,StudentController as S,AdminController as A,SuperAdminController as SA}; use App\Http\Middleware\{RequireCompleteProfile,RoleMiddleware as R};
 Route::get('/login',[AuthController::class,'show'])->name('login');
 Route::get('/auth/microsoft',[AuthController::class,'redirect']);
 Route::get('/auth/microsoft/callback',[AuthController::class,'callback']);
@@ -11,14 +11,14 @@ Route::middleware('auth')->get('/',function(){
   if($user->role === 'superadmin') return redirect('/superadmin');
   return redirect($user->isAdminSide()?'/admin':'/dashboard');
 });
-Route::middleware(['auth',R::class.':student,organization'])->group(function(){
+Route::middleware(['auth',R::class.':student,organization',RequireCompleteProfile::class])->group(function(){
   Route::get('/dashboard',[S::class,'dashboard']); Route::get('/facilities',[S::class,'facilities']); Route::post('/reservations',[S::class,'reserve']);
   Route::get('/equipment',[S::class,'equipment']); Route::post('/borrow',[S::class,'borrow']); Route::get('/requests',[S::class,'requests']);
   Route::post('/requests/{req}/edit',[S::class,'updateRequest']); Route::post('/requests/{req}/cancel',[S::class,'cancelRequest']);
   Route::get('/transactions',[S::class,'transactions']); Route::get('/notifications',[S::class,'notifications']);
   Route::get('/profile',[S::class,'profile']); Route::post('/profile',[S::class,'updateProfile']);
 });
-Route::prefix('admin')->middleware(['auth',R::class.':staff,admin'])->group(function(){
+Route::prefix('admin')->middleware(['auth',R::class.':staff,admin',RequireCompleteProfile::class])->group(function(){
   Route::get('/',[A::class,'dashboard']); Route::get('/requests',[A::class,'requests']); Route::post('/requests/{req}/decide',[A::class,'decide']); Route::post('/requests/{req}/release',[A::class,'release']);
   Route::post('/transactions/{tx}/return',[A::class,'returned']);
   Route::get('/return-reminders',[A::class,'returnReminders']); Route::post('/transactions/{tx}/remind',[A::class,'sendReturnReminder']);
