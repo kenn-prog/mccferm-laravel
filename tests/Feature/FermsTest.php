@@ -4,6 +4,7 @@ use App\Models\{Equipment,EquipmentItem,Facility,FermsRequest,Notice,Reservation
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Carbon;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\User as SocialiteUser;
 use Tests\TestCase;
@@ -670,6 +671,17 @@ class FermsTest extends TestCase {
       ->assertSee('Cancelled')
       ->assertSee('aria-label="Pending share of requests" aria-valuemin="0" aria-valuemax="100" aria-valuenow="25"',false)
       ->assertSee('style="width:25%"',false);
+  }
+  public function test_dashboard_uses_philippine_local_time(): void {
+    $student=$this->u('student');
+    Carbon::setTestNow(Carbon::parse('2026-11-17 05:39:00','UTC'));
+
+    try {
+      $this->actingAs($student)->get('/dashboard')->assertOk()
+        ->assertSee('Tuesday, November 17, 2026 · 13:39');
+    } finally {
+      Carbon::setTestNow();
+    }
   }
   public function test_student_and_organization_can_choose_new_request_type_from_dashboard(): void {
     foreach (['student','organization'] as $role) {
