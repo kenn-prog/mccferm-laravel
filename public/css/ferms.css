@@ -226,6 +226,7 @@ label{font-size:12.5px;font-weight:700;color:#3f5a86}textarea{min-height:76px;re
 .stat-card-compact.warn .icon{background:linear-gradient(135deg,#fff3cd,#ffeaa7);color:#f59e0b}
 .stat-card-compact.warn .value{color:#f59e0b}
 .content-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px;align-items:start;margin-bottom:16px}
+.dashboard-side-column{display:grid;gap:12px;align-content:start}
 .enhanced-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--sh);margin-bottom:12px}
 .enhanced-card .cardhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
 .enhanced-card .cardhead h3{margin:0;font-size:16px;font-weight:700;color:var(--navy)}

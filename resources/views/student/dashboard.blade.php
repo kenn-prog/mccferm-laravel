@@ -127,6 +127,21 @@
       @endforelse
     </div>
 
+  </div>
+
+  <div class="dashboard-side-column">
+    <div class="hero-card">
+      <h3>Facility Overview</h3>
+      <div class="donut" style="--p:{{ $pct }}">
+        <div>{{ $pct }}%<small>Available</small></div>
+      </div>
+      <div class="legend">
+        <span><i style="background:#7fd0ff"></i>Available</span>
+        <span><i style="background:rgba(255,255,255,.35)"></i>Occupied</span>
+      </div>
+      <p class="sub" style="margin:16px 0 0;text-align:center">{{ $facilities }} of {{ $totalFac }} facilities open for reservation</p>
+    </div>
+
     <div class="enhanced-card request-overview">
       <div class="cardhead">
         <div>
@@ -154,18 +169,6 @@
         <p class="request-overview-empty">Your request activity will appear here once you submit your first request.</p>
       @endif
     </div>
-  </div>
-
-  <div class="hero-card">
-    <h3>Facility Overview</h3>
-    <div class="donut" style="--p:{{ $pct }}">
-      <div>{{ $pct }}%<small>Available</small></div>
-    </div>
-    <div class="legend">
-      <span><i style="background:#7fd0ff"></i>Available</span>
-      <span><i style="background:rgba(255,255,255,.35)"></i>Occupied</span>
-    </div>
-    <p class="sub" style="margin:16px 0 0;text-align:center">{{ $facilities }} of {{ $totalFac }} facilities open for reservation</p>
   </div>
 </div>
 @endsection
