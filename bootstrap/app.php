@@ -11,7 +11,15 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->preventRequestsDuringMaintenance([
+            'superadmin',
+            'superadmin/*',
+            'login',
+            'auth/microsoft',
+            'auth/microsoft/callback',
+            'logout',
+            'up',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

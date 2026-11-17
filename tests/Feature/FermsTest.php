@@ -273,6 +273,34 @@ class FermsTest extends TestCase {
       $this->get($homePath)->assertOk();
     }
   }
+  public function test_superadmin_can_access_settings_and_disable_maintenance_mode(): void {
+    $superadmin=User::create([
+      'name'=>'Superadmin',
+      'email'=>'maintenance-admin@test.mcc.edu.ph',
+      'role'=>'superadmin',
+      'is_active'=>true,
+    ]);
+    $student=$this->u('student');
+    \Illuminate\Support\Facades\Artisan::call('down');
+
+    try {
+      $this->actingAs($superadmin)->get('/superadmin/settings')->assertOk();
+      $this->actingAs($student)->get('/dashboard')->assertStatus(503);
+
+      \Illuminate\Support\Facades\DB::table('system_settings')
+        ->where('key','maintenance_mode')
+        ->update(['value'=>'true']);
+
+      $this->actingAs($superadmin)->from('/superadmin/settings')
+        ->post('/superadmin/maintenance-toggle')
+        ->assertRedirect('/superadmin/settings');
+
+      $this->assertSame('false',\Illuminate\Support\Facades\DB::table('system_settings')->where('key','maintenance_mode')->value('value'));
+      $this->assertFalse(app()->maintenanceMode()->active());
+    } finally {
+      \Illuminate\Support\Facades\Artisan::call('up');
+    }
+  }
   public function test_password_changes_are_unavailable_for_every_role(): void {
     $administrator=User::create([
       'name'=>'IT Administrator',
