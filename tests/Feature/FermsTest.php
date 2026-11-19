@@ -68,6 +68,35 @@ class FermsTest extends TestCase {
     $this->get('/auth/microsoft')->assertRedirect('https://login.microsoftonline.com/');
   }
 
+  public function test_mobile_microsoft_start_stores_the_pkce_challenge_in_session(): void {
+    config([
+      'services.microsoft.client_id'=>'test-client-id',
+      'services.microsoft.client_secret'=>'test-client-secret',
+    ]);
+
+    $challenge=rtrim(strtr(base64_encode(hash('sha256',str_repeat('e',64),true)),'+/','-_'),'=');
+    $provider=\Mockery::mock();
+    $provider->shouldReceive('redirect')->once()->andReturn(redirect('https://login.microsoftonline.com/'));
+    Socialite::shouldReceive('driver')->once()->with('microsoft')->andReturn($provider);
+
+    $this->get('/auth/mobile/microsoft?'.http_build_query([
+      'code_challenge'=>$challenge,
+      'code_challenge_method'=>'S256',
+    ]))->assertRedirect('https://login.microsoftonline.com/')
+      ->assertSessionHas('mobile_oauth',true)
+      ->assertSessionHas('mobile_oauth_challenge',$challenge);
+  }
+
+  public function test_mobile_microsoft_cancellation_returns_to_the_app(): void {
+    $response=$this->withSession(['mobile_oauth'=>true])
+      ->get('/auth/microsoft/callback?error=access_denied');
+    $response->assertRedirect();
+    $location=parse_url($response->headers->get('Location'));
+    parse_str($location['query'] ?? '',$callback);
+    $this->assertSame('mccferms',$location['scheme'] ?? null);
+    $this->assertSame('sign_in_cancelled',$callback['error'] ?? null);
+  }
+
   public function test_microsoft_callback_sends_unregistered_account_to_registration(): void {
     config([
       'services.microsoft.client_id'=>'test-client-id',
@@ -158,6 +187,107 @@ class FermsTest extends TestCase {
 
     $this->get('/auth/microsoft/callback')->assertRedirect('/dashboard');
     $this->assertAuthenticatedAs($student);
+  }
+
+  public function test_mobile_microsoft_sign_in_exchanges_a_pkce_code_for_a_sanctum_token(): void {
+    config([
+      'services.microsoft.client_id'=>'test-client-id',
+      'services.microsoft.client_secret'=>'test-client-secret',
+    ]);
+
+    $student=$this->u('student');
+    $verifier=str_repeat('a',64);
+    $challenge=rtrim(strtr(base64_encode(hash('sha256',$verifier,true)),'+/','-_'),'=');
+    $microsoftUser=\Mockery::mock(SocialiteUser::class);
+    $microsoftUser->shouldReceive('getEmail')->once()->andReturn($student->email);
+    $provider=\Mockery::mock();
+    $provider->shouldReceive('user')->once()->andReturn($microsoftUser);
+    Socialite::shouldReceive('driver')->once()->with('microsoft')->andReturn($provider);
+
+    $response=$this->withSession([
+      'mobile_oauth'=>true,
+      'mobile_oauth_challenge'=>$challenge,
+    ])->get('/auth/microsoft/callback');
+    $response->assertRedirect();
+
+    $location=parse_url($response->headers->get('Location'));
+    parse_str($location['query'] ?? '',$callback);
+    $this->assertSame('mccferms',$location['scheme'] ?? null);
+    $this->assertSame('auth',$location['host'] ?? null);
+    $this->assertSame('/callback',$location['path'] ?? null);
+    $this->assertArrayHasKey('code',$callback);
+
+    $exchange=$this->postJson('/api/mobile-auth/exchange',[
+      'code'=>$callback['code'],
+      'code_verifier'=>$verifier,
+    ])->assertOk()->assertJsonPath('user.id',$student->id);
+    $token=$exchange->json('token');
+    $this->assertNotEmpty($token);
+    $this->withToken($token)->getJson('/api/user')->assertOk()
+      ->assertJsonPath('user.email',$student->email);
+
+    $this->postJson('/api/mobile-auth/exchange',[
+      'code'=>$callback['code'],
+      'code_verifier'=>$verifier,
+    ])->assertUnprocessable();
+  }
+
+  public function test_mobile_microsoft_sign_in_requires_the_original_pkce_verifier(): void {
+    $code='unpredictable-one-time-ticket';
+    $verifier=str_repeat('b',64);
+    $challenge=rtrim(strtr(base64_encode(hash('sha256',$verifier,true)),'+/','-_'),'=');
+    \Illuminate\Support\Facades\Cache::put(
+      'mobile-auth:'.hash('sha256',$code),
+      ['user_id'=>$this->u('student')->id,'code_challenge'=>$challenge],
+      now()->addMinutes(2),
+    );
+
+    $this->postJson('/api/mobile-auth/exchange',[
+      'code'=>$code,
+      'code_verifier'=>str_repeat('c',64),
+    ])->assertUnprocessable();
+    $this->assertTrue(\Illuminate\Support\Facades\Cache::has('mobile-auth:'.hash('sha256',$code)));
+  }
+
+  public function test_new_mobile_microsoft_account_can_complete_registration_and_return_to_the_app(): void {
+    config([
+      'services.microsoft.client_id'=>'test-client-id',
+      'services.microsoft.client_secret'=>'test-client-secret',
+    ]);
+
+    $verifier=str_repeat('d',64);
+    $challenge=rtrim(strtr(base64_encode(hash('sha256',$verifier,true)),'+/','-_'),'=');
+    $microsoftUser=\Mockery::mock(SocialiteUser::class);
+    $microsoftUser->shouldReceive('getEmail')->once()->andReturn('newmobile@mcc.edu.ph');
+    $microsoftUser->shouldReceive('getName')->once()->andReturn('New Mobile User');
+    $provider=\Mockery::mock();
+    $provider->shouldReceive('user')->once()->andReturn($microsoftUser);
+    Socialite::shouldReceive('driver')->once()->with('microsoft')->andReturn($provider);
+
+    $this->withSession([
+      'mobile_oauth'=>true,
+      'mobile_oauth_challenge'=>$challenge,
+    ])->get('/auth/microsoft/callback')
+      ->assertRedirect('/register')
+      ->assertSessionHas('pending_mobile_oauth',true);
+
+    $response=$this->post('/register',[
+      'name'=>'New Mobile User',
+      'role'=>'student',
+      'organization_class'=>'BSIT 3A',
+      'student_employee_id'=>'7788-9900',
+      'phone'=>'09123456789',
+    ]);
+    $response->assertRedirect();
+    $location=parse_url($response->headers->get('Location'));
+    parse_str($location['query'] ?? '',$callback);
+    $this->assertSame('mccferms',$location['scheme'] ?? null);
+    $this->assertArrayHasKey('code',$callback);
+
+    $this->postJson('/api/mobile-auth/exchange',[
+      'code'=>$callback['code'],
+      'code_verifier'=>$verifier,
+    ])->assertOk()->assertJsonPath('user.email','newmobile@mcc.edu.ph');
   }
 
   public function test_unconfigured_microsoft_sign_in_fails_without_email_fallback(): void {

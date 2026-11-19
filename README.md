@@ -79,6 +79,12 @@ The Blueprint does not run migrations or seed data automatically. This app is co
 
 Render's local container filesystem is ephemeral. Do not rely on it for durable user uploads; configure external object storage before introducing upload features. The initial deployment uses synchronous queues and file cache.
 
+## Android app Microsoft sign-in
+
+The Android app starts Microsoft OAuth in the system browser at `/auth/mobile/microsoft`. Laravel uses the existing Microsoft Entra web callback (`/auth/microsoft/callback`), then returns a short-lived PKCE-protected code to `mccferms://auth/callback`. The app exchanges that code at `POST /api/mobile-auth/exchange` for a Sanctum API token. The access token itself is never sent through the deep link.
+
+Use the same `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET`, `MICROSOFT_TENANT_ID`, and `MCC_EMAIL_DOMAIN` configuration as website sign-in. Keep `MICROSOFT_REDIRECT_URI` registered as a **Web** redirect URI in Entra ID; the mobile app does not need a separate Entra client secret or redirect URI. Confirm the Sanctum personal access token migration has run on the deployed database before testing the app.
+
 ## Tests
 
 `php artisan test` (uses in-memory SQLite; PostgreSQL-only constraints are skipped there).
@@ -88,4 +94,4 @@ Render's local container filesystem is ephemeral. Do not rely on it for durable 
 
 ## Not yet implemented
 
-Calendar-grid schedule views and a screen for `facility_schedules` blocks, admin settings page, REST API, pagination.
+Calendar-grid schedule views and a screen for `facility_schedules` blocks, admin settings page, pagination.

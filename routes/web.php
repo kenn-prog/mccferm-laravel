@@ -2,6 +2,7 @@
 use Illuminate\Support\Facades\Route; use App\Http\Controllers\{AuthController,StudentController as S,AdminController as A,SuperAdminController as SA}; use App\Http\Middleware\{RequireCompleteProfile,RoleMiddleware as R};
 Route::get('/login',[AuthController::class,'show'])->name('login');
 Route::get('/auth/microsoft',[AuthController::class,'redirect']);
+Route::get('/auth/mobile/microsoft',[AuthController::class,'mobileRedirect'])->middleware('throttle:10,1');
 Route::get('/auth/microsoft/callback',[AuthController::class,'callback']);
 Route::get('/register',[AuthController::class,'registerForm'])->middleware('web');
 Route::post('/register',[AuthController::class,'storeRegistration'])->middleware('web');
