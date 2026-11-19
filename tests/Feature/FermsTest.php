@@ -671,6 +671,7 @@ class FermsTest extends TestCase {
     $this->assertSame(0,FermsRequest::count());
   }
   public function test_facility_request_offers_equipment_then_shows_staff_letter_reminder(): void {
+    $this->travelTo(today()->next('Tuesday'));
     $student=$this->u('student');
     $facility=Facility::create(['name'=>'Hall','location'=>'Main','capacity'=>50]);
     $equipment=Equipment::create(['name'=>'Projector','category'=>'AV','total_quantity'=>5,'available_quantity'=>5]);
@@ -705,6 +706,7 @@ class FermsTest extends TestCase {
       ->assertDontSee('<dialog class="confirm-dialog" id="request-followup-dialog">',false);
   }
   public function test_equipment_request_offers_facility_then_shows_staff_letter_reminder(): void {
+    $this->travelTo(today()->next('Tuesday'));
     $student=$this->u('student');
     $equipment=Equipment::create(['name'=>'Projector','category'=>'AV','total_quantity'=>5,'available_quantity'=>5]);
     $facility=Facility::create(['name'=>'Hall','location'=>'Main','capacity'=>50]);
@@ -738,6 +740,7 @@ class FermsTest extends TestCase {
       ->assertDontSee('<dialog class="confirm-dialog" id="request-followup-dialog">',false);
   }
   public function test_student_can_edit_own_pending_equipment_request(): void {
+    $this->travelTo(today()->next('Tuesday'));
     $student=$this->u('student');
     $equipment=Equipment::create(['name'=>'Projector','category'=>'AV','total_quantity'=>5,'available_quantity'=>5]);
     $request=FermsRequest::create(['user_id'=>$student->id,'type'=>'equipment','purpose'=>'Class']);
